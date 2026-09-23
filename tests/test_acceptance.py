@@ -150,6 +150,23 @@ class AcceptanceTests(unittest.TestCase):
         self.assertTrue(result['recommendations'])
         self.assertTrue(all(len(r['factors']) >= 2 for r in result['recommendations']))
 
+    def test_explanations_include_verified_levels_and_history_counts(self):
+        m.STATE['history'] = []
+        candidate = m.eligible_candidates(self.employee)[0]
+        candidate['history_counts'] = {'completed': 2, 'no_show': 3, 'declined': 1, 'dropped': 1}
+        evidence = m.recommendation_evidence(candidate, self.employee)
+        self.assertTrue(evidence['skill_effects'])
+        for effect in evidence['skill_effects']:
+            self.assertEqual(effect['after_completion'] - effect['current'], effect['effective_gain'])
+            self.assertLessEqual(effect['after_completion'], effect['max_level'])
+        for language in ['ru', 'kk', 'en']:
+            text = m.factor_copy('next_grade_gap', language, candidate['event'], candidate, self.employee)
+            for effect in evidence['skill_effects']:
+                self.assertIn(f"(+{effect['effective_gain']})", text)
+            history = m.factor_copy('history_fit', language, candidate['event'], candidate, self.employee)
+            self.assertIn('3', history)
+            self.assertIn('2', history)
+
     def test_real_parser_validates_model_selection(self):
         event_id = m.eligible_candidates(self.employee)[0]['event']['event_id']
         for selected, expected_source in [(event_id, 'ai'), ('UNKNOWN_EVENT', 'rules_fallback')]:

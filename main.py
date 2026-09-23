@@ -16,7 +16,7 @@ from typing import Any
 from fastapi import FastAPI, File, Depends, HTTPException, UploadFile, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 import auth
 from auth import Principal, require_session
 
@@ -212,7 +212,7 @@ def eligible_candidates(employee: dict[str, Any]) -> list[dict[str, Any]]:
         preference = min(2, counts["completed"]) - min(3, counts["no_show"] + counts["declined"] + counts["dropped"])
         goal = employee.get("career_goal") or {}
         goal_match = int(bool(target and goal.get("target_role") == employee["role"] and GRADE_ORDER.index(goal.get("target_grade", "Junior")) >= GRADE_ORDER.index(target["grade"])))
-        result.append({"event": event, "impact": impact, "covered": covered, "goal_match": goal_match, "history_signal": preference, "score": impact + 2 * goal_match + preference})
+        result.append({"event": event, "impact": impact, "covered": covered, "goal_match": goal_match, "history_signal": preference, "history_counts": dict(counts), "score": impact + 2 * goal_match + preference})
     return sorted(result, key=lambda row: (-row["score"], row["event"]["event_id"]))
 
 
@@ -222,40 +222,63 @@ def eligible_factor_keys(candidate: dict[str, Any], employee: dict[str, Any]) ->
         keys.append("critical_gap")
     if candidate["goal_match"]:
         keys.append("career_goal")
-    if candidate["history_signal"]:
+    if candidate.get("history_counts"):
         keys.append("history_fit")
     return keys
 
 
+def recommendation_evidence(candidate: dict[str, Any], employee: dict[str, Any]) -> dict[str, Any]:
+    current = progress(employee)
+    gaps = {g["skill_id"]: g for g in current["gaps"]}
+    effects = []
+    for gain in candidate["event"].get("develops_skills", []):
+        sid = gain["skill_id"]
+        if sid not in candidate["covered"]:
+            continue
+        before = current["levels"].get(sid, 0)
+        after = max(before, min(gain["max_level"], before + gain["gain"]))
+        effects.append({"skill_id": sid, "name": gaps[sid]["name"], "current": before,
+                        "required": gaps[sid]["required"], "after_completion": after,
+                        "effective_gain": after - before, "max_level": gain["max_level"],
+                        "critical": gaps[sid]["critical"]})
+    return {"target_grade": current["target_grade"], "skill_effects": effects,
+            "similarity_basis": "activity_type", "history_counts": candidate.get("history_counts", {}),
+            "activity_type": candidate["event"]["type"], "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
+
+
 def factor_copy(key: str, lang: str, event: dict[str, Any], candidate: dict[str, Any], employee: dict[str, Any]) -> str:
-    gaps = progress(employee)["gaps"]
-    names = {s["skill_id"]: s["name"] for s in STATE["skills"]["skills"]}
-    covered = candidate["covered"]
-    if key == "critical_gap":
-        critical = set(progress(employee)["critical_skills"])
-        covered = [s for s in covered if s in critical]
-    covered_names = ", ".join(names.get(s, s) for s in covered[:2])
+    evidence = recommendation_evidence(candidate, employee)
+    effects = evidence["skill_effects"]
+    critical = ", ".join(e["name"] for e in effects if e["critical"])
+    grade = evidence["target_grade"]
+    counts = evidence["history_counts"]
+    completed, skipped, declined, dropped = (counts.get(k, 0) for k in ("completed", "no_show", "declined", "dropped"))
+    goal = employee.get("career_goal") or {}
+    role, level = employee["role"], employee["grade"]
+    effect_ru = "; ".join(f"{e['name']}: {e['current']} из {e['required']}; после выполнения — {e['after_completion']} (+{e['effective_gain']})" for e in effects)
+    effect_kk = "; ".join(f"{e['name']}: қазір {e['current']}, талап {e['required']}; аяқтаған соң — {e['after_completion']} (+{e['effective_gain']})" for e in effects)
+    effect_en = "; ".join(f"{e['name']}: {e['current']} of {e['required']}; after completion: {e['after_completion']} (+{e['effective_gain']})" for e in effects)
     lines = {
         "ru": {
-            "critical_gap": f"Развивает критичный для следующего грейда навык: {covered_names}.",
-            "next_grade_gap": f"Помогает закрыть разрыв до требований следующего грейда: {covered_names}.",
-            "activity_fit": f"Подходит по роли и уровню; развивает: {covered_names}.",
-            "career_goal": "Соответствует указанной карьерной цели.",
-            "history_fit": "Учтена история похожих активностей при выборе следующего шага.",
+            "next_grade_gap": f"Для {grade}: {effect_ru}.",
+            "critical_gap": f"Для перехода на {grade} обязателен требуемый уровень: {critical}.",
+            "activity_fit": f"Доступно для {role}, {level}; предпосылки выполнены. Длительность — {event['duration_hours']} ч.",
+            "career_goal": f"Поддерживает вашу цель: {goal.get('target_role')}, {goal.get('target_grade')}.",
+            "history_fit": f"В истории активностей того же типа: завершено — {completed}, пропущено — {skipped}, отказов — {declined}, прекращено — {dropped}. Эти данные учтены при выборе; пропуски не запрещают участие.",
         },
         "kk": {
-            "critical_gap": f"Келесі деңгей үшін маңызды дағдыны дамытады: {covered_names}.",
-            "next_grade_gap": f"Келесі деңгей талаптарына жету алшақтығын қысқартуға көмектеседі: {covered_names}.",
-            "activity_fit": f"Рөл мен деңгейге сәйкес; дамытатын дағдылар: {covered_names}.",
-            "career_goal": "Көрсетілген мансап мақсатына сәйкес келеді.",
-            "history_fit": "Келесі қадамды таңдағанда ұқсас іс-шаралар тарихы ескерілді.",
+            "next_grade_gap": f"{grade} үшін: {effect_kk}.",
+            "critical_gap": f"{grade} деңгейіне өту үшін талап етілетін деңгейге жетуі міндетті дағдылар: {critical}.",
+            "activity_fit": f"{role}, {level} үшін қолжетімді; алғышарттар орындалған. Ұзақтығы — {event['duration_hours']} сағ.",
+            "career_goal": f"Мансап мақсатыңызға көмектеседі: {goal.get('target_role')}, {goal.get('target_grade')}.",
+            "history_fit": f"Осы типтегі іс-шаралар тарихы: аяқталған — {completed}, қатыспаған — {skipped}, бас тартқан — {declined}, тоқтатқан — {dropped}. Бұл деректер таңдауда ескерілді; қатыспау қайта қатысуға тыйым салмайды.",
         },
         "en": {
-            "critical_gap": f"Builds a skill marked critical for the next grade: {covered_names}.",
-            "next_grade_gap": f"Helps close a gap against next-grade requirements: {covered_names}.",
-            "activity_fit": f"Fits the role and grade; develops: {covered_names}.",
-            "career_goal": "Matches the stated career goal.",
-            "history_fit": "Participation in similar activities informed this next-step choice.",
+            "next_grade_gap": f"For {grade}: {effect_en}.",
+            "critical_gap": f"Reaching the required level in these skills is mandatory for {grade}: {critical}.",
+            "activity_fit": f"Eligible for {role}, {level}; prerequisites met. Duration: {event['duration_hours']} h.",
+            "career_goal": f"Supports your goal: {goal.get('target_role')}, {goal.get('target_grade')}.",
+            "history_fit": f"History for the same activity type: {completed} completed, {skipped} no-shows, {declined} declined, {dropped} dropped. These counts informed selection; missed activities do not prevent participation.",
         },
     }
     return lines.get(lang, lines["en"]).get(key, "")
@@ -326,14 +349,42 @@ def recommendations(employee: dict[str, Any], lang: str, use_llm: bool = True) -
         selected = [(c, eligible_factor_keys(c, employee)) for c in candidates[:3]]
     result = []
     for candidate, keys in selected:
+        keys = list(dict.fromkeys(["next_grade_gap", *keys]))
         event = candidate["event"]
-        result.append({"event_id": event["event_id"], "title": event["title"], "description": event["description"], "type": event["type"], "format": event["format"], "duration_hours": event["duration_hours"], "upcoming_sessions": event.get("upcoming_sessions", []), "reasons": [factor_copy(key, lang, event, candidate, employee) for key in keys], "factors": keys, "develops_skills": event.get("develops_skills", [])})
+        result.append({"event_id": event["event_id"], "title": event["title"], "description": event["description"], "type": event["type"], "format": event["format"], "duration_hours": event["duration_hours"], "upcoming_sessions": event.get("upcoming_sessions", []), "reasons": [factor_copy(key, lang, event, candidate, employee) for key in keys], "factors": keys, "evidence": recommendation_evidence(candidate, employee), "develops_skills": event.get("develops_skills", [])})
     return {"source": source, "recommendations": result}
 
 
 class CompleteRequest(BaseModel):
     employee_id: str
     event_id: str
+
+
+class OpenAIKeyRequest(BaseModel):
+    api_key: SecretStr
+
+
+@app.get("/api/settings/openai")
+def openai_settings(principal: Principal = Depends(require_session)):
+    role_required("hr", principal)
+    return {"configured": bool(os.getenv("OPENAI_API_KEY")), "model": os.getenv("OPENAI_MODEL", "gpt-4o-mini")}
+
+
+@app.post("/api/settings/openai")
+def save_openai_key(body: OpenAIKeyRequest, principal: Principal = Depends(require_session)):
+    role_required("hr", principal)
+    key = body.api_key.get_secret_value().strip()
+    if not 20 <= len(key) <= 4096 or not key.startswith("sk-") or any(char.isspace() for char in key):
+        raise HTTPException(400, "Некорректный формат API-ключа")
+    os.environ["OPENAI_API_KEY"] = key
+    return openai_settings(principal)
+
+
+@app.delete("/api/settings/openai")
+def remove_openai_key(principal: Principal = Depends(require_session)):
+    role_required("hr", principal)
+    os.environ.pop("OPENAI_API_KEY", None)
+    return openai_settings(principal)
 
 
 def localized(lang: str, ru: str, kk: str, en: str) -> str:
@@ -381,14 +432,18 @@ def complete_activity(body: CompleteRequest, principal: Principal = Depends(requ
     event = STATE["events"].get(body.event_id)
     if not event or event.get("mandatory") or body.event_id not in {c["event"]["event_id"] for c in eligible_candidates(employee)}:
         raise HTTPException(status_code=400, detail="Эта активность сейчас недоступна")
-    latest_review = as_date(employee.get("last_review_date"))
+    before = progress(employee)
     snapshot = as_date(STATE["skills"]["meta"]["as_of_date"]) or date.today()
     activity_day = snapshot.isoformat()
     record = {"record_id": f"CQ_{uuid.uuid4().hex[:12]}", "employee_id": body.employee_id, "event_id": body.event_id, "date": activity_day, "due_date": "", "status": "completed", "completion_pct": "100", "score": "", "feedback_rating": "", "assigned_by": "self"}
     with connect() as conn:
         conn.execute("INSERT INTO activity_history(record_id,payload) VALUES (?,?)", (record["record_id"], json.dumps(record)))
     STATE["history"].append(record)
-    return {"ok": True, "progress": progress(employee)}
+    after = progress(employee)
+    names = {s["skill_id"]: s["name"] for s in STATE["skills"]["skills"]}
+    changes = [{"skill_id": sid, "name": names[sid], "before": before["levels"][sid], "after": value}
+               for sid, value in after["levels"].items() if value != before["levels"][sid]]
+    return {"ok": True, "progress": after, "changes": changes, "recorded_date": activity_day}
 
 
 def parse_upload(name: str, raw: bytes) -> Any:

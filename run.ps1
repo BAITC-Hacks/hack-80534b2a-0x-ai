@@ -18,4 +18,4 @@ finally {
 }
 
 Set-Location $projectRoot
-& $venvPython -m uvicorn main:app --host 127.0.0.1 --port 8000
+& $venvPython (Join-Path $projectRoot 'scripts\start.py')
