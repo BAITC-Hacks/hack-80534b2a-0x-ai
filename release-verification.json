@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-09-23T12:10:50.479880+00:00",
+  "python": "3.12.0",
+  "environment": "Windows, localhost, fresh venv and SQLite; no load test",
+  "measurement": "Browser action to visible skill rows / recommendation cards; includes browser automation overhead; uncached profile requests",
+  "hr_login_to_rows_ms": 444,
+  "profiles": [
+    {
+      "id": "E0004",
+      "profile_ms": 298,
+      "recommendations_ms": 2719,
+      "source": "ai"
+    },
+    {
+      "id": "CONTROL_CRITICAL",
+      "profile_ms": 924,
+      "recommendations_ms": 2640,
+      "source": "ai"
+    },
+    {
+      "id": "CONTROL_PREREQUISITES",
+      "profile_ms": 924,
+      "recommendations_ms": 2555,
+      "source": "ai"
+    },
+    {
+      "id": "CONTROL_REPEAT",
+      "profile_ms": 915,
+      "recommendations_ms": 1947,
+      "source": "ai"
+    }
+  ],
+  "ui_under_2_seconds": true,
+  "ai_under_10_seconds": true,
+  "browser_errors": [],
+  "clean_start": {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\run.ps1 -Port 8766",
+    "empty_database": true,
+    "fresh_venv": true,
+    "dependencies_installed": true,
+    "interactive_accounts_created": true,
+    "health_status": "ok",
+    "pip_check": "No broken requirements found (separate fresh installation)",
+    "scope": "Same Windows host; network available; package download cache may be used"
+  },
+  "unit_tests": {
+    "passed": 95,
+    "seconds": 19.795
+  },
+  "javascript_checks": "passed"
+}
