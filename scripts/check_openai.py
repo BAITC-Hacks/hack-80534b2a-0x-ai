@@ -46,7 +46,7 @@ def main():
             event_ids = [candidate['event']['event_id'] for candidate, _ in selected]
             checks = {'one_to_three': 1 <= len(selected) <= 3,
                       'under_ten_seconds': elapsed < 10,
-                      'multiple_factors': all(len(set(factors)) >= 2 for _, factors in selected),
+                      'multiple_factors': all(len(set(factors)) >= 3 for _, factors in selected),
                       'eligible_events': set(event_ids) <= {c['event']['event_id'] for c in candidates}}
             if employee['employee_id'] == 'CONTROL_CRITICAL':
                 checks['critical_skill_first'] = bool(selected and 'SK_SYSTEM_DESIGN' in selected[0][0]['covered'] and 'critical_gap' in selected[0][1])

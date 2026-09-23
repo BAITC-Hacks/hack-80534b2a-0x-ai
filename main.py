@@ -23,6 +23,7 @@ import auth
 from auth import Principal, require_session
 from request_guard import RequestBodyLimitMiddleware
 from recommendation_runtime import RecommendationRuntime
+from history_validation import validate_history_eligibility
 
 ROOT = Path(__file__).parent
 DATA = ROOT / "data"
@@ -250,15 +251,13 @@ def eligible_candidates(employee: dict[str, Any]) -> list[dict[str, Any]]:
 
 def eligible_factor_keys(candidate: dict[str, Any], employee: dict[str, Any]) -> list[str]:
     state = progress(employee)
-    keys = ["activity_fit"]
+    keys = ["activity_fit", "history_fit"]
     if candidate["primary_covered"]:
         keys.insert(0, "current_grade_gap" if state["at_top_grade"] else "next_grade_gap")
     if any(s in state["critical_skills"] for s in candidate["primary_covered"]):
         keys.append("critical_gap")
     if candidate["goal_match"]:
         keys.append("career_goal")
-    if candidate.get("history_counts"):
-        keys.append("history_fit")
     return keys
 
 
@@ -329,6 +328,10 @@ def factor_copy(key: str, lang: str, event: dict[str, Any], candidate: dict[str,
             "history_fit": f"History with shared skills and matching type or format: {completed} completed, {skipped} no-shows, {declined} declined, {dropped} dropped. These counts informed selection; missed activities do not prevent participation.",
         },
     }
+    if key == "history_fit" and not counts:
+        return {"ru": "В истории нет похожих активностей: предпочтения по участию пока неизвестны. Это нейтральный сигнал, а не подтверждение успешного обучения.",
+                "kk": "Тарихта ұқсас іс-шаралар жоқ: қатысу қалауы әзірше белгісіз. Бұл бейтарап белгі, табысты оқудың дәлелі емес.",
+                "en": "There are no similar activities in the history, so participation preferences are unknown. This is neutral evidence, not a record of successful learning."}.get(lang, "No similar participation history is available; this is neutral evidence.")
     return lines.get(lang, lines["en"]).get(key, "")
 
 
@@ -351,8 +354,8 @@ def llm_select(employee: dict[str, Any], candidates: list[dict[str, Any]], lang:
                 "develops_skills": c["event"].get("develops_skills", []), "evidence": recommendation_evidence(c, employee),
                 "skills": c["covered"], "factors": eligible_factor_keys(c, employee), "score": c["score"],
                 "goal_contribution": c["goal_match"], "history_signal": c["history_signal"]} for c in candidates]
-    schema = {"type": "object", "properties": {"recommendations": {"type": "array", "maxItems": 3, "items": {"type": "object", "properties": {"event_id": {"type": "string", "enum": [c["event"]["event_id"] for c in candidates]}, "factor_keys": {"type": "array", "minItems": 2, "items": {"type": "string", "enum": ["critical_gap", "next_grade_gap", "current_grade_gap", "career_goal", "activity_fit", "history_fit"]}}}, "required": ["event_id", "factor_keys"], "additionalProperties": False}}}, "required": ["recommendations"], "additionalProperties": False}
-    payload = {"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"), "temperature": 0.1, "response_format": {"type": "json_schema", "json_schema": {"name": "career_recommendations", "strict": True, "schema": schema}}, "messages": [{"role": "system", "content": "Choose up to 3 distinct suitable voluntary development activities from the supplied eligible candidates. Use multiple factors, especially critical next-grade gaps and participation history. Never invent facts. Return only the required JSON."}, {"role": "user", "content": json.dumps({"language": lang, "profile": {"role": employee["role"], "grade": employee["grade"], "career_goal": employee.get("career_goal"), "gaps": progress(employee)["gaps"]}, "history": [{"event_id": r["event_id"], "status": r.get("status"), "date": r.get("date")} for r in employee_history(employee["employee_id"])], "candidates": choices}, ensure_ascii=False)}]}
+    schema = {"type": "object", "properties": {"recommendations": {"type": "array", "maxItems": 3, "items": {"type": "object", "properties": {"event_id": {"type": "string", "enum": [c["event"]["event_id"] for c in candidates]}, "factor_keys": {"type": "array", "minItems": 3, "items": {"type": "string", "enum": ["critical_gap", "next_grade_gap", "current_grade_gap", "career_goal", "activity_fit", "history_fit"]}}}, "required": ["event_id", "factor_keys"], "additionalProperties": False}}}, "required": ["recommendations"], "additionalProperties": False}
+    payload = {"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"), "temperature": 0.1, "response_format": {"type": "json_schema", "json_schema": {"name": "career_recommendations", "strict": True, "schema": schema}}, "messages": [{"role": "system", "content": "Choose up to 3 distinct suitable voluntary development activities from the supplied eligible candidates. Use at least three distinct verified factors for every recommendation: activity_fit for current role/grade eligibility, history_fit for similar participation history (absence of history is neutral, never a positive record), and at least one of next_grade_gap, current_grade_gap or career_goal for skill requirements. Prioritize critical gaps. Use only factor keys offered for the candidate. Never invent facts. Return only the required JSON."}, {"role": "user", "content": json.dumps({"language": lang, "profile": {"role": employee["role"], "grade": employee["grade"], "career_goal": employee.get("career_goal"), "gaps": progress(employee)["gaps"]}, "history": [{"event_id": r["event_id"], "status": r.get("status"), "date": r.get("date")} for r in employee_history(employee["employee_id"])], "candidates": choices}, ensure_ascii=False)}]}
     request = urllib.request.Request("https://api.openai.com/v1/chat/completions", data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
     try:
         with urllib.request.urlopen(request, timeout=8) as response:
@@ -373,14 +376,16 @@ def llm_select(employee: dict[str, Any], candidates: list[dict[str, Any]], lang:
         raise OpenAISelectionError("invalid_recommendation_count")
     for item in items:
         event_id, factors = item.get("event_id"), item.get("factor_keys", [])
-        if event_id not in lookup or event_id in seen or len(set(factors)) < 2:
+        if (not isinstance(factors, list) or not all(isinstance(f, str) for f in factors)
+                or event_id not in lookup or event_id in seen or len(set(factors)) < 3):
             raise OpenAISelectionError("invalid_event_or_factors")
         allowed = set(eligible_factor_keys(lookup[event_id], employee))
         if not set(factors) <= allowed:
             raise OpenAISelectionError("unsupported_factors")
         factors = list(dict.fromkeys(factors))
-        if len(factors) < 2:
-            continue
+        if (not {"activity_fit", "history_fit"} <= set(factors)
+                or not set(factors) & {"next_grade_gap", "current_grade_gap", "career_goal"}):
+            raise OpenAISelectionError("missing_independent_factors")
         selected.append((lookup[event_id], factors))
         seen.add(event_id)
     if content.get("recommendations") and not selected:
@@ -470,7 +475,19 @@ def get_profile(employee_id: str, lang: str = "ru", principal: Principal = Depen
     skills_by_id = {s["skill_id"]: s for s in STATE["skills"]["skills"]}
     state = progress(employee)
     employee_public = {key: employee.get(key) for key in ["employee_id", "full_name", "department", "role", "grade", "tenure_months", "preferred_language", "career_goal", "last_review_date"]}
-    return {"employee": employee_public, "progress": state, "current_requirements": (current or {}).get("required_skills", {}), "target_requirements": (next_profile or {}).get("required_skills", {}), "skills": [{**skills_by_id.get(g["skill_id"], {"skill_id": g["skill_id"]}), **g} for g in state["gaps"]], "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
+    completed = []
+    for record in sorted(employee_history(employee_id), key=lambda r: (r["date"], r["record_id"]), reverse=True):
+        if record.get("status") != "completed":
+            continue
+        event = STATE["events"].get(record["event_id"])
+        if not event:
+            continue
+        completed.append({"record_id": record["record_id"], "event_id": record["event_id"],
+                          "title": event["title"], "description": event["description"],
+                          "type": event["type"], "format": event["format"], "mandatory": event["mandatory"],
+                          "date": record["date"], "status": "completed",
+                          "counted_since_review": record["date"] > employee["last_review_date"]})
+    return {"employee": employee_public, "progress": state, "completed_activities": completed, "current_requirements": (current or {}).get("required_skills", {}), "target_requirements": (next_profile or {}).get("required_skills", {}), "skills": [{**skills_by_id.get(g["skill_id"], {"skill_id": g["skill_id"]}), **g} for g in state["gaps"]], "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
 
 
 @app.get("/api/recommendations/{employee_id}")
@@ -666,6 +683,8 @@ def validate_import(employees: list[dict[str, Any]], history: list[dict[str, Any
             for row in rows:
                 if id(row) in incoming_ids:
                     errors.append(f"{row.get('record_id', '?')}: повторное участие после completed запрещено для {row['event_id']}")
+    if not errors:
+        errors.extend(validate_history_eligibility(all_employees, STATE["events"], STATE["history"], history, snapshot.isoformat()))
     return errors
 
 
@@ -709,6 +728,7 @@ def hr_summary(principal: Principal = Depends(require_session)) -> dict[str, Any
     gaps = defaultdict(lambda: {"employees": 0, "total_gap": 0, "critical_count": 0})
     grouped_gaps = defaultdict(lambda: defaultdict(lambda: {"employees": 0, "total_gap": 0, "critical_count": 0}))
     slipping = []
+    without_step = []
     for employee in STATE["employees"].values():
         profile = progress(employee)
         for gap in profile["gaps"]:
@@ -724,6 +744,10 @@ def hr_summary(principal: Principal = Depends(require_session)) -> dict[str, Any
         recent = [r for r in employee_history(employee["employee_id"]) if r.get("status") in {"no_show", "declined", "dropped"} and (as_date(STATE["skills"]["meta"]["as_of_date"]) - (as_date(r.get("date")) or date.min)).days <= 183]
         if len(recent) >= 2:
             slipping.append({"employee_id": employee["employee_id"], "name": employee.get("full_name"), "role": employee["role"], "grade": employee["grade"], "recent_opt_outs": len(recent), "latest_date": max(r.get("date", "") for r in recent)})
+        if not eligible_candidates(employee):
+            without_step.append({"employee_id": employee["employee_id"], "name": employee.get("full_name"),
+                                 "role": employee["role"], "grade": employee["grade"],
+                                 **unavailable_step_evidence(employee, profile)})
     skill_map = {s["skill_id"]: s for s in STATE["skills"]["skills"]}
     weak = [{"skill_id": key, "name": skill_map.get(key, {}).get("name", key), **value} for key, value in gaps.items()]
     weak.sort(key=lambda row: (-row["critical_count"], -row["total_gap"], row["name"]))
@@ -733,7 +757,70 @@ def hr_summary(principal: Principal = Depends(require_session)) -> dict[str, Any
         rows.sort(key=lambda row: (-row["critical_count"], -row["total_gap"], row["name"]))
         by_segment.append({"role": role, "grade": grade, "competency_gaps": rows})
     by_segment.sort(key=lambda item: (item["role"], GRADE_ORDER.index(item["grade"])))
-    return {"competency_gaps": weak, "role_grade_gaps": by_segment, "roles": sorted({e["role"] for e in STATE["employees"].values()}), "grades": GRADE_ORDER, "employees_at_risk": sorted(slipping, key=lambda r: (-r["recent_opt_outs"], r["name"] or "")), "employee_count": len(STATE["employees"]), "history_count": len(STATE["history"])}
+    return {"competency_gaps": weak, "role_grade_gaps": by_segment, "roles": sorted({e["role"] for e in STATE["employees"].values()}), "grades": GRADE_ORDER, "employees_at_risk": sorted(slipping, key=lambda r: (-r["recent_opt_outs"], r["name"] or "")), "employee_count": len(STATE["employees"]), "history_count": len(STATE["history"]),
+            "employees_without_next_step": sorted(without_step, key=lambda r: (r["name"] or "", r["employee_id"])),
+            "activity_participation": activity_participation(), "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
+
+
+def unavailable_step_evidence(employee, profile):
+    """Catalog constraints, not an LLM judgement or a disengagement score."""
+    levels = profile["levels"]
+    requirements = {g["skill_id"]: g["required"] for g in profile["gaps"]}
+    goal = employee.get("career_goal") or {}
+    goal_profile = next((p for p in STATE["skills"]["role_profiles"]
+                         if p["role"] == goal.get("target_role") and p["grade"] == goal.get("target_grade")), {})
+    for skill, required in goal_profile.get("required_skills", {}).items():
+        requirements[skill] = max(requirements.get(skill, 0), required)
+    has_gaps = any(levels.get(skill, 0) < required for skill, required in requirements.items())
+    audience_events = [e for e in STATE["events"].values() if not e.get("mandatory")
+                       and employee["role"] in e.get("target_roles", []) and employee["grade"] in e.get("target_grades", [])]
+    completed = {r["event_id"] for r in employee_history(employee["employee_id"]) if r.get("status") == "completed"}
+    snapshot = STATE["skills"]["meta"]["as_of_date"]
+    counts = Counter()
+    for event in audience_events:
+        if event["event_id"] in completed and event["event_id"] != "EV_036":
+            counts["already_completed"] += 1
+        if any(levels.get(sid, 0) < minimum for sid, minimum in event.get("prerequisites", {}).items()):
+            counts["prerequisites"] += 1
+        if event["format"] != "self_paced" and not any(as_date(day) and day >= snapshot for day in event.get("upcoming_sessions", [])):
+            counts["no_sessions"] += 1
+        if not any(min(g["gain"], max(0, g["max_level"] - levels.get(g["skill_id"], 0)),
+                       max(0, requirements.get(g["skill_id"], 0) - levels.get(g["skill_id"], 0))) > 0
+                   for g in event.get("develops_skills", [])):
+            counts["no_skill_gain"] += 1
+    reasons = list(counts)
+    if not audience_events:
+        reasons = ["no_role_grade_events"]
+    if not has_gaps:
+        reasons = ["requirements_met"]
+    return {"has_skill_gaps": has_gaps, "reason_codes": reasons, "blocked_counts": dict(counts)}
+
+
+def activity_participation():
+    statuses = ("completed", "in_progress", "dropped", "no_show", "declined", "overdue")
+    by_event = defaultdict(list)
+    snapshot = STATE["skills"]["meta"]["as_of_date"]
+    for record in STATE["history"]:
+        if record["employee_id"] in STATE["employees"] and record["date"] <= snapshot:
+            by_event[record["event_id"]].append(record)
+
+    def totals(rows):
+        counts = Counter(row["status"] for row in rows)
+        return {"total_records": len(rows), "unique_employees": len({r["employee_id"] for r in rows}),
+                "status_counts": {status: counts[status] for status in statuses}}
+
+    result = []
+    for event in STATE["events"].values():
+        rows = by_event[event["event_id"]]
+        grouped = defaultdict(list)
+        for row in rows:
+            employee = STATE["employees"][row["employee_id"]]
+            grouped[(employee["role"], employee["grade"])].append(row)
+        result.append({"event_id": event["event_id"], "title": event["title"], "description": event["description"],
+                       "type": event["type"], "mandatory": event["mandatory"], **totals(rows),
+                       "segments": [{"role": role, "grade": grade, **totals(records)}
+                                    for (role, grade), records in sorted(grouped.items())]})
+    return sorted(result, key=lambda e: e["event_id"])
 
 
 app.mount("/", StaticFiles(directory=ROOT / "static", html=True), name="web")

@@ -148,7 +148,7 @@ class AcceptanceTests(unittest.TestCase):
             result = m.recommendations(self.employee, 'ru')
         self.assertEqual(result['source'], 'rules_fallback')
         self.assertTrue(result['recommendations'])
-        self.assertTrue(all(len(r['factors']) >= 2 for r in result['recommendations']))
+        self.assertTrue(all(len(set(r['factors'])) >= 3 for r in result['recommendations']))
 
     def test_explanations_include_verified_levels_and_history_counts(self):
         m.STATE['history'] = []
@@ -170,7 +170,7 @@ class AcceptanceTests(unittest.TestCase):
     def test_real_parser_validates_model_selection(self):
         event_id = m.eligible_candidates(self.employee)[0]['event']['event_id']
         for selected, expected_source in [(event_id, 'ai'), ('UNKNOWN_EVENT', 'rules_fallback')]:
-            model_content = {'recommendations': [{'event_id': selected, 'factor_keys': ['next_grade_gap', 'activity_fit']}]}
+            model_content = {'recommendations': [{'event_id': selected, 'factor_keys': ['next_grade_gap', 'activity_fit', 'history_fit']}]}
             response = io.BytesIO(json.dumps({'choices': [{'message': {'content': json.dumps(model_content)}}]}).encode())
             with patch.dict(m.os.environ, {'OPENAI_API_KEY': 'test-key'}), patch('urllib.request.urlopen', return_value=response):
                 result = m.recommendations(self.employee, 'en')
