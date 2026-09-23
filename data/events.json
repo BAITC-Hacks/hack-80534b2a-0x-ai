@@ -1,0 +1,1432 @@
+{
+  "meta": {
+    "dataset": "Career Quest",
+    "version": "1.0",
+    "as_of_date": "2026-10-01"
+  },
+  "events": [
+    {
+      "event_id": "EV_001",
+      "title": "Information Security Awareness",
+      "description": "Annual training on phishing, passwords and safe handling of company data.",
+      "type": "compliance",
+      "format": "self_paced",
+      "duration_hours": 2,
+      "mandatory": true,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [],
+      "prerequisites": {},
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_002",
+      "title": "Personal Data Protection",
+      "description": "Annual training on lawful processing and storage of personal data.",
+      "type": "compliance",
+      "format": "self_paced",
+      "duration_hours": 2,
+      "mandatory": true,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [],
+      "prerequisites": {},
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_003",
+      "title": "Code of Conduct & Workplace Safety",
+      "description": "Annual training on business ethics, anti-corruption rules and workplace safety.",
+      "type": "compliance",
+      "format": "self_paced",
+      "duration_hours": 2,
+      "mandatory": true,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [],
+      "prerequisites": {},
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_004",
+      "title": "New Employee Onboarding",
+      "description": "One-day introduction to the company, its products, tools and people. Completed in the first month.",
+      "type": "onboarding",
+      "format": "offline",
+      "duration_hours": 8,
+      "mandatory": true,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_PRODUCT_KNOWLEDGE",
+          "gain": 1,
+          "max_level": 2
+        },
+        {
+          "skill_id": "SK_TEAMWORK",
+          "gain": 1,
+          "max_level": 2
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-05",
+        "2026-11-02",
+        "2026-12-07"
+      ]
+    },
+    {
+      "event_id": "EV_005",
+      "title": "System Design Fundamentals",
+      "description": "Core building blocks of distributed systems: caching, queues, databases, APIs.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 16,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "QA Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_SYSTEM_DESIGN",
+          "gain": 1,
+          "max_level": 3
+        },
+        {
+          "skill_id": "SK_API_DESIGN",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-11-23",
+        "2026-12-25"
+      ]
+    },
+    {
+      "event_id": "EV_006",
+      "title": "Designing High-Load Systems",
+      "description": "Hands-on architecture workshop on scaling, resilience and monitoring of production services.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 12,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_SYSTEM_DESIGN",
+          "gain": 1,
+          "max_level": 5
+        },
+        {
+          "skill_id": "SK_API_DESIGN",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_OBSERVABILITY",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_SYSTEM_DESIGN": 2
+      },
+      "upcoming_sessions": [
+        "2026-10-07",
+        "2026-11-09",
+        "2026-12-10"
+      ]
+    },
+    {
+      "event_id": "EV_007",
+      "title": "Architecture Review Circle",
+      "description": "Small-group sessions where a senior architect reviews participants' real design decisions.",
+      "type": "mentoring",
+      "format": "online",
+      "duration_hours": 8,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_SYSTEM_DESIGN",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_COMMUNICATION",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_SYSTEM_DESIGN": 2
+      },
+      "upcoming_sessions": [
+        "2026-10-23",
+        "2026-11-13",
+        "2026-12-17"
+      ]
+    },
+    {
+      "event_id": "EV_008",
+      "title": "Business Writing & Documentation",
+      "description": "Writing clear emails, documents and specs that people actually read.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 4,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_WRITTEN_COMMUNICATION",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_COMMUNICATION",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-12",
+        "2026-11-12"
+      ]
+    },
+    {
+      "event_id": "EV_009",
+      "title": "Cloud Certification Prep",
+      "description": "Preparation track for an associate-level cloud certification, with final exam.",
+      "type": "certification",
+      "format": "self_paced",
+      "duration_hours": 40,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "QA Engineer",
+        "Data Analyst"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_CLOUD",
+          "gain": 1,
+          "max_level": 3
+        },
+        {
+          "skill_id": "SK_CICD",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_010",
+      "title": "Kubernetes in Practice",
+      "description": "Deploying and operating services on Kubernetes with automated pipelines.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 20,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "QA Engineer"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_CONTAINERS",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_CICD",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_CONTAINERS": 1
+      },
+      "upcoming_sessions": [
+        "2026-10-16",
+        "2026-11-17",
+        "2026-12-21"
+      ]
+    },
+    {
+      "event_id": "EV_011",
+      "title": "Secure Coding Workshop",
+      "description": "Finding and fixing common vulnerabilities in real code samples.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 6,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "QA Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_APP_SECURITY",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-11-23",
+        "2026-12-25"
+      ]
+    },
+    {
+      "event_id": "EV_012",
+      "title": "Advanced Python",
+      "description": "Idiomatic Python, typing, testing and performance.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 24,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Data Analyst"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_PYTHON",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_PYTHON": 1
+      },
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_013",
+      "title": "TypeScript in Depth",
+      "description": "Type system, generics and safe refactoring of large frontend codebases.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 12,
+      "mandatory": false,
+      "target_roles": [
+        "Frontend Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_TYPESCRIPT",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_JAVASCRIPT",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_JAVASCRIPT": 2
+      },
+      "upcoming_sessions": [
+        "2026-10-21",
+        "2026-11-06",
+        "2026-12-23"
+      ]
+    },
+    {
+      "event_id": "EV_014",
+      "title": "Web Performance Deep Dive",
+      "description": "Profiling and optimizing a production TypeScript application end to end.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 8,
+      "mandatory": false,
+      "target_roles": [
+        "Frontend Engineer"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_WEB_PERFORMANCE",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_TYPESCRIPT": 3
+      },
+      "upcoming_sessions": [
+        "2026-11-09",
+        "2026-12-23"
+      ]
+    },
+    {
+      "event_id": "EV_015",
+      "title": "Web Performance Fundamentals",
+      "description": "Core Web Vitals, loading strategies and rendering performance basics.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 6,
+      "mandatory": false,
+      "target_roles": [
+        "Frontend Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_WEB_PERFORMANCE",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {
+        "SK_JAVASCRIPT": 2
+      },
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_016",
+      "title": "Accessible Interfaces",
+      "description": "Designing and building interfaces that meet accessibility standards.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 4,
+      "mandatory": false,
+      "target_roles": [
+        "Frontend Engineer",
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_ACCESSIBILITY",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_HTML_CSS",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-06",
+        "2026-12-23"
+      ]
+    },
+    {
+      "event_id": "EV_017",
+      "title": "React Patterns & State Management",
+      "description": "Component architecture, state management and testing in React.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 16,
+      "mandatory": false,
+      "target_roles": [
+        "Frontend Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_REACT",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_REACT": 2
+      },
+      "upcoming_sessions": [
+        "2026-10-16",
+        "2026-11-23",
+        "2026-12-25"
+      ]
+    },
+    {
+      "event_id": "EV_018",
+      "title": "Test Automation Bootcamp",
+      "description": "Building a maintainable automated test framework from scratch.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 24,
+      "mandatory": false,
+      "target_roles": [
+        "QA Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_TEST_AUTOMATION",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_JAVA",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {
+        "SK_TEST_DESIGN": 2
+      },
+      "upcoming_sessions": [
+        "2026-10-19",
+        "2026-11-20"
+      ]
+    },
+    {
+      "event_id": "EV_019",
+      "title": "API & Performance Testing Workshop",
+      "description": "Contract testing of APIs and load testing of services under realistic traffic.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 8,
+      "mandatory": false,
+      "target_roles": [
+        "QA Engineer",
+        "Backend Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_API_TESTING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_LOAD_TESTING",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-16",
+        "2026-11-19",
+        "2026-12-22"
+      ]
+    },
+    {
+      "event_id": "EV_020",
+      "title": "Applied Statistics for Analysts",
+      "description": "Full course on probability, distributions, hypothesis testing and regression.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 40,
+      "mandatory": false,
+      "target_roles": [
+        "Data Analyst",
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_STATISTICS",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_021",
+      "title": "A/B Testing Workshop",
+      "description": "Designing experiments, choosing metrics and reading results correctly.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 6,
+      "mandatory": false,
+      "target_roles": [
+        "Data Analyst",
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_AB_TESTING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_STATISTICS",
+          "gain": 1,
+          "max_level": 3
+        },
+        {
+          "skill_id": "SK_PRODUCT_ANALYTICS",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_STATISTICS": 1
+      },
+      "upcoming_sessions": [
+        "2026-11-19",
+        "2026-12-09"
+      ]
+    },
+    {
+      "event_id": "EV_022",
+      "title": "SQL & BI for Analytics",
+      "description": "Analytical SQL and building self-service dashboards.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 12,
+      "mandatory": false,
+      "target_roles": [
+        "Data Analyst",
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_SQL",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_BI_TOOLS",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-20",
+        "2026-12-22"
+      ]
+    },
+    {
+      "event_id": "EV_023",
+      "title": "Data Storytelling & Visualization",
+      "description": "Turning analysis into clear charts and presenting findings to decision makers.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 6,
+      "mandatory": false,
+      "target_roles": [
+        "Data Analyst",
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_DATA_VIZ",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_PUBLIC_SPEAKING",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-21",
+        "2026-11-16",
+        "2026-12-16"
+      ]
+    },
+    {
+      "event_id": "EV_024",
+      "title": "Machine Learning for Analysts",
+      "description": "Supervised learning, model evaluation and practical use cases in analytics.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 30,
+      "mandatory": false,
+      "target_roles": [
+        "Data Analyst"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_ML_BASICS",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {
+        "SK_PYTHON": 2,
+        "SK_STATISTICS": 2
+      },
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_025",
+      "title": "Dimensional Data Modeling",
+      "description": "Designing star schemas and analytical data marts.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 10,
+      "mandatory": false,
+      "target_roles": [
+        "Data Analyst",
+        "Backend Engineer"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_DATA_MODELING",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {
+        "SK_SQL": 2
+      },
+      "upcoming_sessions": [
+        "2026-10-13",
+        "2026-12-10"
+      ]
+    },
+    {
+      "event_id": "EV_026",
+      "title": "Product Discovery Lab",
+      "description": "Running customer interviews and validating problems before building.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 8,
+      "mandatory": false,
+      "target_roles": [
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_PRODUCT_DISCOVERY",
+          "gain": 1,
+          "max_level": 5
+        },
+        {
+          "skill_id": "SK_UX_RESEARCH",
+          "gain": 1,
+          "max_level": 3
+        },
+        {
+          "skill_id": "SK_REQUIREMENTS",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-11-10",
+        "2026-12-10"
+      ]
+    },
+    {
+      "event_id": "EV_027",
+      "title": "Roadmapping & Agile Planning",
+      "description": "Prioritization frameworks, roadmap communication and iterative delivery planning.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 6,
+      "mandatory": false,
+      "target_roles": [
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_ROADMAPPING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_AGILE",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_PROJECT_MGMT",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_STAKEHOLDER_MGMT",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-22",
+        "2026-12-15"
+      ]
+    },
+    {
+      "event_id": "EV_028",
+      "title": "Labor Law & Employee Relations",
+      "description": "Recent changes in labor legislation and handling of typical employee cases.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 4,
+      "mandatory": false,
+      "target_roles": [
+        "HR Business Partner"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_LABOR_LAW",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_EMPLOYEE_RELATIONS",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-12",
+        "2026-11-05",
+        "2026-12-24"
+      ]
+    },
+    {
+      "event_id": "EV_029",
+      "title": "People Analytics & Total Rewards",
+      "description": "Workforce metrics, pay benchmarking and benefit design.",
+      "type": "course",
+      "format": "self_paced",
+      "duration_hours": 12,
+      "mandatory": false,
+      "target_roles": [
+        "HR Business Partner"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_HR_ANALYTICS",
+          "gain": 1,
+          "max_level": 3
+        },
+        {
+          "skill_id": "SK_COMPENSATION",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": []
+    },
+    {
+      "event_id": "EV_030",
+      "title": "Structured Interviewing",
+      "description": "Competency-based interviews and unbiased candidate evaluation.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 4,
+      "mandatory": false,
+      "target_roles": [
+        "HR Business Partner"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_TALENT_ACQUISITION",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-20",
+        "2026-11-09",
+        "2026-12-22"
+      ]
+    },
+    {
+      "event_id": "EV_031",
+      "title": "Designing Learning Programs",
+      "description": "Building learning paths and facilitating training sessions.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 6,
+      "mandatory": false,
+      "target_roles": [
+        "HR Business Partner"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_LEARNING_DESIGN",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_PUBLIC_SPEAKING",
+          "gain": 1,
+          "max_level": 3
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-19",
+        "2026-11-25",
+        "2026-12-17"
+      ]
+    },
+    {
+      "event_id": "EV_032",
+      "title": "Negotiation Masterclass",
+      "description": "Negotiation strategy and practice on real deal scenarios.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 8,
+      "mandatory": false,
+      "target_roles": [
+        "Sales Manager",
+        "Product Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_NEGOTIATION",
+          "gain": 1,
+          "max_level": 5
+        },
+        {
+          "skill_id": "SK_ACCOUNT_MGMT",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-15",
+        "2026-11-05"
+      ]
+    },
+    {
+      "event_id": "EV_033",
+      "title": "Consultative Selling & Prospecting",
+      "description": "Qualifying leads, discovery calls and pipeline hygiene in CRM.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 10,
+      "mandatory": false,
+      "target_roles": [
+        "Sales Manager"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_PROSPECTING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_CRM",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-23",
+        "2026-11-20",
+        "2026-12-09"
+      ]
+    },
+    {
+      "event_id": "EV_034",
+      "title": "Handling Difficult Conversations",
+      "description": "De-escalation techniques for tense conversations with customers and colleagues.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 4,
+      "mandatory": false,
+      "target_roles": [
+        "Customer Support Specialist",
+        "Sales Manager",
+        "HR Business Partner"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_CONFLICT_RESOLUTION",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_EMOTIONAL_INTELLIGENCE",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_CUSTOMER_SERVICE",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-16",
+        "2026-11-13",
+        "2026-12-23"
+      ]
+    },
+    {
+      "event_id": "EV_035",
+      "title": "Technical Troubleshooting Academy",
+      "description": "Systematic diagnosis of product issues, logs and escalation paths.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 16,
+      "mandatory": false,
+      "target_roles": [
+        "Customer Support Specialist",
+        "QA Engineer"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_TROUBLESHOOTING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_PRODUCT_KNOWLEDGE",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-09",
+        "2026-11-23"
+      ]
+    },
+    {
+      "event_id": "EV_036",
+      "title": "Public Speaking Club",
+      "description": "Recurring club where members give short talks and get feedback. Can be attended repeatedly.",
+      "type": "meetup",
+      "format": "offline",
+      "duration_hours": 2,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_PUBLIC_SPEAKING",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-08",
+        "2026-10-22",
+        "2026-11-05",
+        "2026-11-19",
+        "2026-12-03",
+        "2026-12-17"
+      ]
+    },
+    {
+      "event_id": "EV_037",
+      "title": "Mentor Track",
+      "description": "Training and supervised practice for new mentors.",
+      "type": "mentoring",
+      "format": "online",
+      "duration_hours": 12,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_MENTORING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_FEEDBACK",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-11-19",
+        "2026-12-11"
+      ]
+    },
+    {
+      "event_id": "EV_038",
+      "title": "Leadership Foundations",
+      "description": "Core skills for new and aspiring team leads.",
+      "type": "course",
+      "format": "online",
+      "duration_hours": 16,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_LEADERSHIP",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_CONFLICT_RESOLUTION",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_STAKEHOLDER_MGMT",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-10-08",
+        "2026-11-09"
+      ]
+    },
+    {
+      "event_id": "EV_039",
+      "title": "Time & Priority Management",
+      "description": "Planning your week, managing interruptions and adapting to shifting priorities.",
+      "type": "workshop",
+      "format": "online",
+      "duration_hours": 3,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_TIME_MANAGEMENT",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_ADAPTABILITY",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-11-25",
+        "2026-12-18"
+      ]
+    },
+    {
+      "event_id": "EV_040",
+      "title": "Structured Problem Solving",
+      "description": "Team exercises on framing problems, testing hypotheses and deciding together.",
+      "type": "workshop",
+      "format": "offline",
+      "duration_hours": 4,
+      "mandatory": false,
+      "target_roles": [
+        "Backend Engineer",
+        "Frontend Engineer",
+        "Data Analyst",
+        "QA Engineer",
+        "Product Manager",
+        "HR Business Partner",
+        "Sales Manager",
+        "Customer Support Specialist"
+      ],
+      "target_grades": [
+        "Junior",
+        "Middle",
+        "Senior",
+        "Lead"
+      ],
+      "develops_skills": [
+        {
+          "skill_id": "SK_PROBLEM_SOLVING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_CRITICAL_THINKING",
+          "gain": 1,
+          "max_level": 4
+        },
+        {
+          "skill_id": "SK_TEAMWORK",
+          "gain": 1,
+          "max_level": 4
+        }
+      ],
+      "prerequisites": {},
+      "upcoming_sessions": [
+        "2026-11-09",
+        "2026-12-17"
+      ]
+    }
+  ]
+}

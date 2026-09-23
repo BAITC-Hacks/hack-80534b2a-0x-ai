@@ -1,0 +1,1163 @@
+{
+  "meta": {
+    "dataset": "Career Quest",
+    "version": "1.0",
+    "as_of_date": "2026-10-01"
+  },
+  "proficiency_scale": {
+    "0": "No knowledge",
+    "1": "Basic awareness: knows key concepts, needs guidance",
+    "2": "Working knowledge: handles routine tasks with some support",
+    "3": "Proficient: works independently on typical tasks",
+    "4": "Advanced: handles complex cases, guides others",
+    "5": "Expert: sets standards and shapes practice across the company"
+  },
+  "skills": [
+    {
+      "skill_id": "SK_PYTHON",
+      "name": "Python",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Writing, testing and maintaining Python code."
+    },
+    {
+      "skill_id": "SK_JAVA",
+      "name": "Java",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Writing, testing and maintaining Java code."
+    },
+    {
+      "skill_id": "SK_SQL",
+      "name": "SQL",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Querying and transforming relational data."
+    },
+    {
+      "skill_id": "SK_API_DESIGN",
+      "name": "API Design",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Designing clear, versioned and secure service interfaces."
+    },
+    {
+      "skill_id": "SK_SYSTEM_DESIGN",
+      "name": "System Design",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Designing scalable, reliable distributed systems."
+    },
+    {
+      "skill_id": "SK_CLOUD",
+      "name": "Cloud Platforms",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Building and running services on cloud infrastructure."
+    },
+    {
+      "skill_id": "SK_CONTAINERS",
+      "name": "Containers & Orchestration",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Packaging and running services with containers and orchestrators."
+    },
+    {
+      "skill_id": "SK_CICD",
+      "name": "CI/CD",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Automating build, test and deployment pipelines."
+    },
+    {
+      "skill_id": "SK_APP_SECURITY",
+      "name": "Application Security",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Preventing common vulnerabilities in application code."
+    },
+    {
+      "skill_id": "SK_OBSERVABILITY",
+      "name": "Observability",
+      "type": "hard",
+      "category": "engineering",
+      "description": "Monitoring systems with metrics, logs and traces."
+    },
+    {
+      "skill_id": "SK_JAVASCRIPT",
+      "name": "JavaScript",
+      "type": "hard",
+      "category": "frontend",
+      "description": "Writing modern JavaScript for web applications."
+    },
+    {
+      "skill_id": "SK_TYPESCRIPT",
+      "name": "TypeScript",
+      "type": "hard",
+      "category": "frontend",
+      "description": "Writing type-safe TypeScript code."
+    },
+    {
+      "skill_id": "SK_REACT",
+      "name": "React",
+      "type": "hard",
+      "category": "frontend",
+      "description": "Building UI with React components and state management."
+    },
+    {
+      "skill_id": "SK_HTML_CSS",
+      "name": "HTML & CSS",
+      "type": "hard",
+      "category": "frontend",
+      "description": "Building semantic, responsive page layouts."
+    },
+    {
+      "skill_id": "SK_WEB_PERFORMANCE",
+      "name": "Web Performance",
+      "type": "hard",
+      "category": "frontend",
+      "description": "Measuring and improving page load and runtime performance."
+    },
+    {
+      "skill_id": "SK_ACCESSIBILITY",
+      "name": "Web Accessibility",
+      "type": "hard",
+      "category": "frontend",
+      "description": "Building interfaces usable by people with disabilities."
+    },
+    {
+      "skill_id": "SK_TEST_DESIGN",
+      "name": "Test Design",
+      "type": "hard",
+      "category": "quality",
+      "description": "Deriving test cases from requirements and risks."
+    },
+    {
+      "skill_id": "SK_TEST_AUTOMATION",
+      "name": "Test Automation",
+      "type": "hard",
+      "category": "quality",
+      "description": "Building and maintaining automated test suites."
+    },
+    {
+      "skill_id": "SK_API_TESTING",
+      "name": "API Testing",
+      "type": "hard",
+      "category": "quality",
+      "description": "Testing service interfaces for correctness and contracts."
+    },
+    {
+      "skill_id": "SK_LOAD_TESTING",
+      "name": "Load Testing",
+      "type": "hard",
+      "category": "quality",
+      "description": "Testing system behaviour under load."
+    },
+    {
+      "skill_id": "SK_STATISTICS",
+      "name": "Statistics",
+      "type": "hard",
+      "category": "data",
+      "description": "Applying descriptive and inferential statistics."
+    },
+    {
+      "skill_id": "SK_AB_TESTING",
+      "name": "A/B Testing",
+      "type": "hard",
+      "category": "data",
+      "description": "Designing and analysing controlled experiments."
+    },
+    {
+      "skill_id": "SK_DATA_VIZ",
+      "name": "Data Visualization",
+      "type": "hard",
+      "category": "data",
+      "description": "Presenting data clearly with charts and dashboards."
+    },
+    {
+      "skill_id": "SK_BI_TOOLS",
+      "name": "BI Tools",
+      "type": "hard",
+      "category": "data",
+      "description": "Building reports in business intelligence tools."
+    },
+    {
+      "skill_id": "SK_DATA_MODELING",
+      "name": "Data Modeling",
+      "type": "hard",
+      "category": "data",
+      "description": "Designing analytical data structures."
+    },
+    {
+      "skill_id": "SK_ML_BASICS",
+      "name": "Machine Learning Fundamentals",
+      "type": "hard",
+      "category": "data",
+      "description": "Training and evaluating basic ML models."
+    },
+    {
+      "skill_id": "SK_PRODUCT_DISCOVERY",
+      "name": "Product Discovery",
+      "type": "hard",
+      "category": "product",
+      "description": "Finding and validating user problems worth solving."
+    },
+    {
+      "skill_id": "SK_ROADMAPPING",
+      "name": "Roadmapping & Prioritization",
+      "type": "hard",
+      "category": "product",
+      "description": "Prioritizing work and building product roadmaps."
+    },
+    {
+      "skill_id": "SK_PRODUCT_ANALYTICS",
+      "name": "Product Analytics",
+      "type": "hard",
+      "category": "product",
+      "description": "Using product metrics to guide decisions."
+    },
+    {
+      "skill_id": "SK_UX_RESEARCH",
+      "name": "UX Research",
+      "type": "hard",
+      "category": "product",
+      "description": "Running interviews and usability studies."
+    },
+    {
+      "skill_id": "SK_REQUIREMENTS",
+      "name": "Requirements Writing",
+      "type": "hard",
+      "category": "product",
+      "description": "Writing clear, testable requirements."
+    },
+    {
+      "skill_id": "SK_AGILE",
+      "name": "Agile Practices",
+      "type": "hard",
+      "category": "product",
+      "description": "Working in iterative delivery frameworks."
+    },
+    {
+      "skill_id": "SK_PROJECT_MGMT",
+      "name": "Project Management",
+      "type": "hard",
+      "category": "product",
+      "description": "Planning scope, timelines and risks."
+    },
+    {
+      "skill_id": "SK_TALENT_ACQUISITION",
+      "name": "Talent Acquisition",
+      "type": "hard",
+      "category": "hr",
+      "description": "Sourcing, interviewing and hiring candidates."
+    },
+    {
+      "skill_id": "SK_EMPLOYEE_RELATIONS",
+      "name": "Employee Relations",
+      "type": "hard",
+      "category": "hr",
+      "description": "Handling employee cases and workplace issues."
+    },
+    {
+      "skill_id": "SK_LABOR_LAW",
+      "name": "Labor Law",
+      "type": "hard",
+      "category": "hr",
+      "description": "Applying employment legislation in HR practice."
+    },
+    {
+      "skill_id": "SK_HR_ANALYTICS",
+      "name": "HR Analytics",
+      "type": "hard",
+      "category": "hr",
+      "description": "Analysing workforce data for decisions."
+    },
+    {
+      "skill_id": "SK_LEARNING_DESIGN",
+      "name": "Learning Program Design",
+      "type": "hard",
+      "category": "hr",
+      "description": "Designing training programs and learning paths."
+    },
+    {
+      "skill_id": "SK_COMPENSATION",
+      "name": "Compensation & Benefits",
+      "type": "hard",
+      "category": "hr",
+      "description": "Designing pay structures and benefit packages."
+    },
+    {
+      "skill_id": "SK_PROSPECTING",
+      "name": "Prospecting",
+      "type": "hard",
+      "category": "sales",
+      "description": "Finding and qualifying new customers."
+    },
+    {
+      "skill_id": "SK_NEGOTIATION",
+      "name": "Negotiation",
+      "type": "hard",
+      "category": "sales",
+      "description": "Reaching agreements that work for both sides."
+    },
+    {
+      "skill_id": "SK_CRM",
+      "name": "CRM Systems",
+      "type": "hard",
+      "category": "sales",
+      "description": "Managing customer data and pipelines in CRM."
+    },
+    {
+      "skill_id": "SK_ACCOUNT_MGMT",
+      "name": "Account Management",
+      "type": "hard",
+      "category": "sales",
+      "description": "Growing and retaining existing customer accounts."
+    },
+    {
+      "skill_id": "SK_PRODUCT_KNOWLEDGE",
+      "name": "Product Knowledge",
+      "type": "hard",
+      "category": "sales",
+      "description": "Knowing the company's products and how customers use them."
+    },
+    {
+      "skill_id": "SK_CUSTOMER_SERVICE",
+      "name": "Customer Service",
+      "type": "hard",
+      "category": "support",
+      "description": "Resolving customer requests with quality and empathy."
+    },
+    {
+      "skill_id": "SK_TROUBLESHOOTING",
+      "name": "Technical Troubleshooting",
+      "type": "hard",
+      "category": "support",
+      "description": "Diagnosing and resolving technical issues."
+    },
+    {
+      "skill_id": "SK_COMMUNICATION",
+      "name": "Communication",
+      "type": "soft",
+      "category": "communication",
+      "description": "Expressing ideas clearly and listening actively."
+    },
+    {
+      "skill_id": "SK_PUBLIC_SPEAKING",
+      "name": "Public Speaking",
+      "type": "soft",
+      "category": "communication",
+      "description": "Presenting confidently to groups."
+    },
+    {
+      "skill_id": "SK_WRITTEN_COMMUNICATION",
+      "name": "Written Communication",
+      "type": "soft",
+      "category": "communication",
+      "description": "Writing clear emails, documents and reports."
+    },
+    {
+      "skill_id": "SK_STAKEHOLDER_MGMT",
+      "name": "Stakeholder Management",
+      "type": "soft",
+      "category": "communication",
+      "description": "Aligning expectations with stakeholders."
+    },
+    {
+      "skill_id": "SK_LEADERSHIP",
+      "name": "Leadership",
+      "type": "soft",
+      "category": "leadership",
+      "description": "Setting direction and motivating a team."
+    },
+    {
+      "skill_id": "SK_MENTORING",
+      "name": "Mentoring",
+      "type": "soft",
+      "category": "leadership",
+      "description": "Helping colleagues grow through guidance."
+    },
+    {
+      "skill_id": "SK_FEEDBACK",
+      "name": "Feedback",
+      "type": "soft",
+      "category": "leadership",
+      "description": "Giving and receiving constructive feedback."
+    },
+    {
+      "skill_id": "SK_CONFLICT_RESOLUTION",
+      "name": "Conflict Resolution",
+      "type": "soft",
+      "category": "leadership",
+      "description": "Resolving disagreements constructively."
+    },
+    {
+      "skill_id": "SK_TEAMWORK",
+      "name": "Teamwork",
+      "type": "soft",
+      "category": "collaboration",
+      "description": "Working effectively toward shared goals."
+    },
+    {
+      "skill_id": "SK_EMOTIONAL_INTELLIGENCE",
+      "name": "Emotional Intelligence",
+      "type": "soft",
+      "category": "collaboration",
+      "description": "Recognising and managing emotions in yourself and others."
+    },
+    {
+      "skill_id": "SK_PROBLEM_SOLVING",
+      "name": "Problem Solving",
+      "type": "soft",
+      "category": "thinking",
+      "description": "Breaking down problems and finding solutions."
+    },
+    {
+      "skill_id": "SK_CRITICAL_THINKING",
+      "name": "Critical Thinking",
+      "type": "soft",
+      "category": "thinking",
+      "description": "Evaluating information and arguments objectively."
+    },
+    {
+      "skill_id": "SK_TIME_MANAGEMENT",
+      "name": "Time Management",
+      "type": "soft",
+      "category": "personal_effectiveness",
+      "description": "Planning and prioritizing own work."
+    },
+    {
+      "skill_id": "SK_ADAPTABILITY",
+      "name": "Adaptability",
+      "type": "soft",
+      "category": "personal_effectiveness",
+      "description": "Adjusting quickly to change."
+    }
+  ],
+  "role_profiles": [
+    {
+      "role": "Backend Engineer",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_PYTHON": 2,
+        "SK_SQL": 2,
+        "SK_API_DESIGN": 1,
+        "SK_SYSTEM_DESIGN": 1,
+        "SK_CLOUD": 1,
+        "SK_CONTAINERS": 1,
+        "SK_CICD": 1,
+        "SK_APP_SECURITY": 1,
+        "SK_COMMUNICATION": 2,
+        "SK_TEAMWORK": 2,
+        "SK_PROBLEM_SOLVING": 2
+      },
+      "critical_skills": [
+        "SK_PYTHON"
+      ]
+    },
+    {
+      "role": "Backend Engineer",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_PYTHON": 3,
+        "SK_SQL": 3,
+        "SK_API_DESIGN": 3,
+        "SK_SYSTEM_DESIGN": 2,
+        "SK_CLOUD": 2,
+        "SK_CONTAINERS": 2,
+        "SK_CICD": 2,
+        "SK_APP_SECURITY": 2,
+        "SK_OBSERVABILITY": 2,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_PROBLEM_SOLVING": 3,
+        "SK_MENTORING": 1,
+        "SK_STAKEHOLDER_MGMT": 1,
+        "SK_PUBLIC_SPEAKING": 1
+      },
+      "critical_skills": [
+        "SK_PYTHON",
+        "SK_API_DESIGN"
+      ]
+    },
+    {
+      "role": "Backend Engineer",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_PYTHON": 4,
+        "SK_SQL": 4,
+        "SK_API_DESIGN": 4,
+        "SK_SYSTEM_DESIGN": 4,
+        "SK_CLOUD": 3,
+        "SK_CONTAINERS": 3,
+        "SK_CICD": 3,
+        "SK_APP_SECURITY": 3,
+        "SK_OBSERVABILITY": 3,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 3,
+        "SK_LEADERSHIP": 2,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_PUBLIC_SPEAKING": 2
+      },
+      "critical_skills": [
+        "SK_SYSTEM_DESIGN",
+        "SK_API_DESIGN"
+      ]
+    },
+    {
+      "role": "Backend Engineer",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_PYTHON": 4,
+        "SK_SQL": 4,
+        "SK_API_DESIGN": 4,
+        "SK_SYSTEM_DESIGN": 5,
+        "SK_CLOUD": 4,
+        "SK_CONTAINERS": 3,
+        "SK_CICD": 3,
+        "SK_APP_SECURITY": 4,
+        "SK_OBSERVABILITY": 4,
+        "SK_COMMUNICATION": 4,
+        "SK_TEAMWORK": 4,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 4,
+        "SK_LEADERSHIP": 4,
+        "SK_STAKEHOLDER_MGMT": 4,
+        "SK_PUBLIC_SPEAKING": 3
+      },
+      "critical_skills": [
+        "SK_SYSTEM_DESIGN",
+        "SK_LEADERSHIP",
+        "SK_MENTORING"
+      ]
+    },
+    {
+      "role": "Frontend Engineer",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_JAVASCRIPT": 2,
+        "SK_TYPESCRIPT": 1,
+        "SK_REACT": 2,
+        "SK_HTML_CSS": 2,
+        "SK_ACCESSIBILITY": 1,
+        "SK_COMMUNICATION": 2,
+        "SK_TEAMWORK": 2,
+        "SK_PROBLEM_SOLVING": 2
+      },
+      "critical_skills": [
+        "SK_JAVASCRIPT"
+      ]
+    },
+    {
+      "role": "Frontend Engineer",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_JAVASCRIPT": 3,
+        "SK_TYPESCRIPT": 3,
+        "SK_REACT": 3,
+        "SK_HTML_CSS": 3,
+        "SK_WEB_PERFORMANCE": 2,
+        "SK_ACCESSIBILITY": 2,
+        "SK_API_DESIGN": 1,
+        "SK_CICD": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_PROBLEM_SOLVING": 3,
+        "SK_MENTORING": 1,
+        "SK_STAKEHOLDER_MGMT": 1,
+        "SK_PUBLIC_SPEAKING": 1
+      },
+      "critical_skills": [
+        "SK_TYPESCRIPT",
+        "SK_REACT"
+      ]
+    },
+    {
+      "role": "Frontend Engineer",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_JAVASCRIPT": 4,
+        "SK_TYPESCRIPT": 4,
+        "SK_REACT": 4,
+        "SK_HTML_CSS": 4,
+        "SK_WEB_PERFORMANCE": 4,
+        "SK_ACCESSIBILITY": 3,
+        "SK_API_DESIGN": 2,
+        "SK_CICD": 2,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 3,
+        "SK_LEADERSHIP": 2,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_PUBLIC_SPEAKING": 2
+      },
+      "critical_skills": [
+        "SK_WEB_PERFORMANCE",
+        "SK_TYPESCRIPT"
+      ]
+    },
+    {
+      "role": "Frontend Engineer",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_JAVASCRIPT": 4,
+        "SK_TYPESCRIPT": 4,
+        "SK_REACT": 4,
+        "SK_HTML_CSS": 4,
+        "SK_WEB_PERFORMANCE": 4,
+        "SK_ACCESSIBILITY": 4,
+        "SK_API_DESIGN": 3,
+        "SK_CICD": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_TEAMWORK": 4,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 4,
+        "SK_LEADERSHIP": 4,
+        "SK_STAKEHOLDER_MGMT": 4,
+        "SK_PUBLIC_SPEAKING": 3
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_MENTORING"
+      ]
+    },
+    {
+      "role": "Data Analyst",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_SQL": 2,
+        "SK_PYTHON": 1,
+        "SK_STATISTICS": 1,
+        "SK_DATA_VIZ": 2,
+        "SK_BI_TOOLS": 2,
+        "SK_COMMUNICATION": 2,
+        "SK_CRITICAL_THINKING": 2
+      },
+      "critical_skills": [
+        "SK_SQL"
+      ]
+    },
+    {
+      "role": "Data Analyst",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_SQL": 3,
+        "SK_PYTHON": 2,
+        "SK_STATISTICS": 3,
+        "SK_AB_TESTING": 2,
+        "SK_DATA_VIZ": 3,
+        "SK_BI_TOOLS": 3,
+        "SK_DATA_MODELING": 2,
+        "SK_ML_BASICS": 1,
+        "SK_PRODUCT_ANALYTICS": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_CRITICAL_THINKING": 3,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_PUBLIC_SPEAKING": 1,
+        "SK_MENTORING": 1
+      },
+      "critical_skills": [
+        "SK_STATISTICS",
+        "SK_SQL"
+      ]
+    },
+    {
+      "role": "Data Analyst",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_SQL": 4,
+        "SK_PYTHON": 3,
+        "SK_STATISTICS": 4,
+        "SK_AB_TESTING": 4,
+        "SK_DATA_VIZ": 4,
+        "SK_BI_TOOLS": 3,
+        "SK_DATA_MODELING": 3,
+        "SK_ML_BASICS": 2,
+        "SK_PRODUCT_ANALYTICS": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_CRITICAL_THINKING": 4,
+        "SK_STAKEHOLDER_MGMT": 3,
+        "SK_PUBLIC_SPEAKING": 2,
+        "SK_MENTORING": 2,
+        "SK_LEADERSHIP": 2
+      },
+      "critical_skills": [
+        "SK_AB_TESTING",
+        "SK_STATISTICS"
+      ]
+    },
+    {
+      "role": "Data Analyst",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_SQL": 4,
+        "SK_PYTHON": 3,
+        "SK_STATISTICS": 4,
+        "SK_AB_TESTING": 4,
+        "SK_DATA_VIZ": 4,
+        "SK_BI_TOOLS": 4,
+        "SK_DATA_MODELING": 4,
+        "SK_ML_BASICS": 3,
+        "SK_PRODUCT_ANALYTICS": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_CRITICAL_THINKING": 4,
+        "SK_STAKEHOLDER_MGMT": 4,
+        "SK_PUBLIC_SPEAKING": 3,
+        "SK_MENTORING": 4,
+        "SK_LEADERSHIP": 4
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_STAKEHOLDER_MGMT"
+      ]
+    },
+    {
+      "role": "QA Engineer",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_TEST_DESIGN": 2,
+        "SK_TEST_AUTOMATION": 1,
+        "SK_API_TESTING": 1,
+        "SK_JAVA": 1,
+        "SK_SQL": 1,
+        "SK_COMMUNICATION": 2,
+        "SK_TEAMWORK": 2,
+        "SK_CRITICAL_THINKING": 2,
+        "SK_WRITTEN_COMMUNICATION": 2
+      },
+      "critical_skills": [
+        "SK_TEST_DESIGN"
+      ]
+    },
+    {
+      "role": "QA Engineer",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_TEST_DESIGN": 3,
+        "SK_TEST_AUTOMATION": 2,
+        "SK_API_TESTING": 3,
+        "SK_LOAD_TESTING": 1,
+        "SK_JAVA": 2,
+        "SK_SQL": 2,
+        "SK_CICD": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_CRITICAL_THINKING": 3,
+        "SK_WRITTEN_COMMUNICATION": 2,
+        "SK_MENTORING": 1
+      },
+      "critical_skills": [
+        "SK_API_TESTING"
+      ]
+    },
+    {
+      "role": "QA Engineer",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_TEST_DESIGN": 4,
+        "SK_TEST_AUTOMATION": 4,
+        "SK_API_TESTING": 4,
+        "SK_LOAD_TESTING": 3,
+        "SK_JAVA": 3,
+        "SK_SQL": 3,
+        "SK_CICD": 3,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_CRITICAL_THINKING": 4,
+        "SK_WRITTEN_COMMUNICATION": 3,
+        "SK_MENTORING": 3,
+        "SK_LEADERSHIP": 2
+      },
+      "critical_skills": [
+        "SK_TEST_AUTOMATION",
+        "SK_LOAD_TESTING"
+      ]
+    },
+    {
+      "role": "QA Engineer",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_TEST_DESIGN": 4,
+        "SK_TEST_AUTOMATION": 4,
+        "SK_API_TESTING": 4,
+        "SK_LOAD_TESTING": 4,
+        "SK_JAVA": 3,
+        "SK_SQL": 3,
+        "SK_CICD": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_TEAMWORK": 4,
+        "SK_CRITICAL_THINKING": 4,
+        "SK_WRITTEN_COMMUNICATION": 4,
+        "SK_MENTORING": 4,
+        "SK_LEADERSHIP": 4
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_MENTORING"
+      ]
+    },
+    {
+      "role": "Product Manager",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_PRODUCT_DISCOVERY": 1,
+        "SK_ROADMAPPING": 1,
+        "SK_PRODUCT_ANALYTICS": 1,
+        "SK_UX_RESEARCH": 1,
+        "SK_REQUIREMENTS": 2,
+        "SK_AGILE": 2,
+        "SK_PROJECT_MGMT": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_STAKEHOLDER_MGMT": 1,
+        "SK_PUBLIC_SPEAKING": 1,
+        "SK_CRITICAL_THINKING": 2
+      },
+      "critical_skills": [
+        "SK_REQUIREMENTS"
+      ]
+    },
+    {
+      "role": "Product Manager",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_PRODUCT_DISCOVERY": 3,
+        "SK_ROADMAPPING": 2,
+        "SK_PRODUCT_ANALYTICS": 3,
+        "SK_UX_RESEARCH": 2,
+        "SK_REQUIREMENTS": 3,
+        "SK_AGILE": 3,
+        "SK_PROJECT_MGMT": 2,
+        "SK_SQL": 1,
+        "SK_AB_TESTING": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_STAKEHOLDER_MGMT": 3,
+        "SK_PUBLIC_SPEAKING": 2,
+        "SK_CRITICAL_THINKING": 3,
+        "SK_LEADERSHIP": 1
+      },
+      "critical_skills": [
+        "SK_PRODUCT_DISCOVERY",
+        "SK_PRODUCT_ANALYTICS"
+      ]
+    },
+    {
+      "role": "Product Manager",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_PRODUCT_DISCOVERY": 4,
+        "SK_ROADMAPPING": 4,
+        "SK_PRODUCT_ANALYTICS": 4,
+        "SK_UX_RESEARCH": 3,
+        "SK_REQUIREMENTS": 4,
+        "SK_AGILE": 3,
+        "SK_PROJECT_MGMT": 3,
+        "SK_SQL": 2,
+        "SK_AB_TESTING": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_STAKEHOLDER_MGMT": 4,
+        "SK_PUBLIC_SPEAKING": 3,
+        "SK_CRITICAL_THINKING": 4,
+        "SK_LEADERSHIP": 3,
+        "SK_MENTORING": 2
+      },
+      "critical_skills": [
+        "SK_ROADMAPPING",
+        "SK_STAKEHOLDER_MGMT"
+      ]
+    },
+    {
+      "role": "Product Manager",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_PRODUCT_DISCOVERY": 5,
+        "SK_ROADMAPPING": 4,
+        "SK_PRODUCT_ANALYTICS": 4,
+        "SK_UX_RESEARCH": 4,
+        "SK_REQUIREMENTS": 4,
+        "SK_AGILE": 4,
+        "SK_PROJECT_MGMT": 4,
+        "SK_SQL": 2,
+        "SK_AB_TESTING": 3,
+        "SK_COMMUNICATION": 5,
+        "SK_STAKEHOLDER_MGMT": 5,
+        "SK_PUBLIC_SPEAKING": 4,
+        "SK_CRITICAL_THINKING": 4,
+        "SK_LEADERSHIP": 4,
+        "SK_MENTORING": 4
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_PRODUCT_DISCOVERY"
+      ]
+    },
+    {
+      "role": "HR Business Partner",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_TALENT_ACQUISITION": 2,
+        "SK_EMPLOYEE_RELATIONS": 1,
+        "SK_LABOR_LAW": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_EMOTIONAL_INTELLIGENCE": 2,
+        "SK_CONFLICT_RESOLUTION": 1,
+        "SK_FEEDBACK": 1,
+        "SK_PUBLIC_SPEAKING": 1
+      },
+      "critical_skills": [
+        "SK_TALENT_ACQUISITION"
+      ]
+    },
+    {
+      "role": "HR Business Partner",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_TALENT_ACQUISITION": 3,
+        "SK_EMPLOYEE_RELATIONS": 3,
+        "SK_LABOR_LAW": 3,
+        "SK_HR_ANALYTICS": 1,
+        "SK_LEARNING_DESIGN": 2,
+        "SK_COMPENSATION": 1,
+        "SK_COMMUNICATION": 3,
+        "SK_EMOTIONAL_INTELLIGENCE": 3,
+        "SK_CONFLICT_RESOLUTION": 2,
+        "SK_FEEDBACK": 2,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_PUBLIC_SPEAKING": 2,
+        "SK_MENTORING": 1
+      },
+      "critical_skills": [
+        "SK_EMPLOYEE_RELATIONS",
+        "SK_LABOR_LAW"
+      ]
+    },
+    {
+      "role": "HR Business Partner",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_TALENT_ACQUISITION": 3,
+        "SK_EMPLOYEE_RELATIONS": 4,
+        "SK_LABOR_LAW": 3,
+        "SK_HR_ANALYTICS": 3,
+        "SK_LEARNING_DESIGN": 3,
+        "SK_COMPENSATION": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_EMOTIONAL_INTELLIGENCE": 4,
+        "SK_CONFLICT_RESOLUTION": 4,
+        "SK_FEEDBACK": 3,
+        "SK_STAKEHOLDER_MGMT": 3,
+        "SK_PUBLIC_SPEAKING": 3,
+        "SK_LEADERSHIP": 2,
+        "SK_MENTORING": 2
+      },
+      "critical_skills": [
+        "SK_HR_ANALYTICS",
+        "SK_CONFLICT_RESOLUTION"
+      ]
+    },
+    {
+      "role": "HR Business Partner",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_TALENT_ACQUISITION": 4,
+        "SK_EMPLOYEE_RELATIONS": 4,
+        "SK_LABOR_LAW": 4,
+        "SK_HR_ANALYTICS": 4,
+        "SK_LEARNING_DESIGN": 4,
+        "SK_COMPENSATION": 4,
+        "SK_COMMUNICATION": 5,
+        "SK_EMOTIONAL_INTELLIGENCE": 5,
+        "SK_CONFLICT_RESOLUTION": 4,
+        "SK_FEEDBACK": 4,
+        "SK_STAKEHOLDER_MGMT": 4,
+        "SK_PUBLIC_SPEAKING": 4,
+        "SK_LEADERSHIP": 4,
+        "SK_MENTORING": 3
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_STAKEHOLDER_MGMT"
+      ]
+    },
+    {
+      "role": "Sales Manager",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_PROSPECTING": 2,
+        "SK_NEGOTIATION": 1,
+        "SK_CRM": 2,
+        "SK_ACCOUNT_MGMT": 1,
+        "SK_PRODUCT_KNOWLEDGE": 2,
+        "SK_COMMUNICATION": 3,
+        "SK_PUBLIC_SPEAKING": 1,
+        "SK_EMOTIONAL_INTELLIGENCE": 2,
+        "SK_TIME_MANAGEMENT": 2,
+        "SK_ADAPTABILITY": 2
+      },
+      "critical_skills": [
+        "SK_PRODUCT_KNOWLEDGE"
+      ]
+    },
+    {
+      "role": "Sales Manager",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_PROSPECTING": 3,
+        "SK_NEGOTIATION": 3,
+        "SK_CRM": 3,
+        "SK_ACCOUNT_MGMT": 2,
+        "SK_PRODUCT_KNOWLEDGE": 3,
+        "SK_COMMUNICATION": 3,
+        "SK_PUBLIC_SPEAKING": 2,
+        "SK_EMOTIONAL_INTELLIGENCE": 3,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_TIME_MANAGEMENT": 3,
+        "SK_ADAPTABILITY": 2,
+        "SK_MENTORING": 1
+      },
+      "critical_skills": [
+        "SK_NEGOTIATION",
+        "SK_PROSPECTING"
+      ]
+    },
+    {
+      "role": "Sales Manager",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_PROSPECTING": 4,
+        "SK_NEGOTIATION": 4,
+        "SK_CRM": 3,
+        "SK_ACCOUNT_MGMT": 4,
+        "SK_PRODUCT_KNOWLEDGE": 4,
+        "SK_COMMUNICATION": 4,
+        "SK_PUBLIC_SPEAKING": 3,
+        "SK_EMOTIONAL_INTELLIGENCE": 3,
+        "SK_STAKEHOLDER_MGMT": 3,
+        "SK_TIME_MANAGEMENT": 3,
+        "SK_ADAPTABILITY": 3,
+        "SK_LEADERSHIP": 2,
+        "SK_MENTORING": 2
+      },
+      "critical_skills": [
+        "SK_ACCOUNT_MGMT",
+        "SK_NEGOTIATION"
+      ]
+    },
+    {
+      "role": "Sales Manager",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_PROSPECTING": 4,
+        "SK_NEGOTIATION": 5,
+        "SK_CRM": 4,
+        "SK_ACCOUNT_MGMT": 4,
+        "SK_PRODUCT_KNOWLEDGE": 4,
+        "SK_COMMUNICATION": 5,
+        "SK_PUBLIC_SPEAKING": 4,
+        "SK_EMOTIONAL_INTELLIGENCE": 4,
+        "SK_STAKEHOLDER_MGMT": 4,
+        "SK_TIME_MANAGEMENT": 4,
+        "SK_ADAPTABILITY": 3,
+        "SK_LEADERSHIP": 4,
+        "SK_MENTORING": 4
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_MENTORING"
+      ]
+    },
+    {
+      "role": "Customer Support Specialist",
+      "grade": "Junior",
+      "required_skills": {
+        "SK_CUSTOMER_SERVICE": 2,
+        "SK_TROUBLESHOOTING": 1,
+        "SK_PRODUCT_KNOWLEDGE": 2,
+        "SK_CRM": 1,
+        "SK_WRITTEN_COMMUNICATION": 2,
+        "SK_COMMUNICATION": 2,
+        "SK_CONFLICT_RESOLUTION": 1,
+        "SK_EMOTIONAL_INTELLIGENCE": 2,
+        "SK_TIME_MANAGEMENT": 2,
+        "SK_ADAPTABILITY": 1,
+        "SK_PROBLEM_SOLVING": 1
+      },
+      "critical_skills": [
+        "SK_CUSTOMER_SERVICE"
+      ]
+    },
+    {
+      "role": "Customer Support Specialist",
+      "grade": "Middle",
+      "required_skills": {
+        "SK_CUSTOMER_SERVICE": 3,
+        "SK_TROUBLESHOOTING": 2,
+        "SK_PRODUCT_KNOWLEDGE": 3,
+        "SK_CRM": 2,
+        "SK_WRITTEN_COMMUNICATION": 3,
+        "SK_COMMUNICATION": 3,
+        "SK_CONFLICT_RESOLUTION": 2,
+        "SK_EMOTIONAL_INTELLIGENCE": 3,
+        "SK_TIME_MANAGEMENT": 3,
+        "SK_ADAPTABILITY": 2,
+        "SK_PROBLEM_SOLVING": 2,
+        "SK_MENTORING": 1,
+        "SK_FEEDBACK": 1
+      },
+      "critical_skills": [
+        "SK_TROUBLESHOOTING",
+        "SK_CONFLICT_RESOLUTION"
+      ]
+    },
+    {
+      "role": "Customer Support Specialist",
+      "grade": "Senior",
+      "required_skills": {
+        "SK_CUSTOMER_SERVICE": 4,
+        "SK_TROUBLESHOOTING": 3,
+        "SK_PRODUCT_KNOWLEDGE": 4,
+        "SK_CRM": 3,
+        "SK_WRITTEN_COMMUNICATION": 3,
+        "SK_COMMUNICATION": 4,
+        "SK_CONFLICT_RESOLUTION": 3,
+        "SK_EMOTIONAL_INTELLIGENCE": 3,
+        "SK_TIME_MANAGEMENT": 3,
+        "SK_ADAPTABILITY": 3,
+        "SK_PROBLEM_SOLVING": 3,
+        "SK_MENTORING": 2,
+        "SK_LEADERSHIP": 2,
+        "SK_FEEDBACK": 2
+      },
+      "critical_skills": [
+        "SK_TROUBLESHOOTING",
+        "SK_MENTORING"
+      ]
+    },
+    {
+      "role": "Customer Support Specialist",
+      "grade": "Lead",
+      "required_skills": {
+        "SK_CUSTOMER_SERVICE": 4,
+        "SK_TROUBLESHOOTING": 4,
+        "SK_PRODUCT_KNOWLEDGE": 4,
+        "SK_CRM": 3,
+        "SK_WRITTEN_COMMUNICATION": 4,
+        "SK_COMMUNICATION": 4,
+        "SK_CONFLICT_RESOLUTION": 4,
+        "SK_EMOTIONAL_INTELLIGENCE": 4,
+        "SK_TIME_MANAGEMENT": 4,
+        "SK_ADAPTABILITY": 3,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 4,
+        "SK_LEADERSHIP": 4,
+        "SK_FEEDBACK": 3
+      },
+      "critical_skills": [
+        "SK_LEADERSHIP",
+        "SK_FEEDBACK"
+      ]
+    }
+  ]
+}
