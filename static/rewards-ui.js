@@ -3,31 +3,52 @@ const QUEST_COPY={
  kk:{title:'Даму сыйлықтары',tag:'ТӘЖІРИБЕҢІЗ — ТАҢДАУЫҢЫЗ',balance:'Қолжетімді',earned:'Жиналды',spent:'Жұмсалды',demo:'Демонстрациялық каталог. Промокодтар жарамсыз. Серіктестермен ұсыныстар келісілмеген.',rules:'Аяқталған ерікті іс-шараға 100 XP, тарихты қоса алғанда. Қайталанатын клуб үшін айына бір рет. Міндетті іс-шараларға XP берілмейді. Айырбастау дағдылар мен мансаптық прогресті өзгертпейді. Демода қызметкер аяқталуды өзі белгілейді; нақты сыйлық үшін нәтижені тексеру қажет.',goal:'Мақсатым',pick:'Жинау',selected:'Менің мақсатым',redeem:'Айырбастау',need:'Жетпейді',ready:'Сыйлық қолжетімді',details:'Есептеу ережелері',codes:'Менің промокодтарым',empty:'Айырбастаудан кейін демо промокодтар осында пайда болады.',confirm:'Айырбастауды растау',cancel:'Бас тарту',confirmHint:'Баланстан шегеріледі',success:'Демо промокод берілді. «Менің промокодтарым» бөлімін қараңыз.',error:'Әрекет орындалмады. Балансты жаңартыңыз немесе қайталаңыз.',refresh:'Балансты жаңарту',awards:'XP тарихы',noAwards:'Алғашқы XP алу үшін ерікті іс-шараны аяқтаңыз.',badge:'Алғашқы даму жолы · 300 XP',toward:'Даму қадамдарын қарау',invalid:'ДЕМО · ЖАРАМСЫЗ'},
  en:{title:'Rewards for growth',tag:'YOUR EXPERIENCE, YOUR CHOICE',balance:'Available',earned:'Earned',spent:'Redeemed',demo:'Demo catalog. Codes are not valid. Partner offers have not been agreed.',rules:'100 XP per completed voluntary activity, including history. Repeat club earns XP once per month. Mandatory activities earn no XP. Redemption does not spend skills or career progress. Completion is self-reported in this demo; real rewards require result verification.',goal:'Saving for',pick:'Save for this',selected:'My goal',redeem:'Redeem',need:'Still needed',ready:'Reward available',details:'Earning rules',codes:'My promo codes',empty:'Your demo promo codes will appear here after redemption.',confirm:'Confirm redemption',cancel:'Cancel',confirmHint:'Your balance will be charged',success:'Demo code issued. Find it under “My promo codes”.',error:'Could not complete the action. Refresh your balance or try again.',refresh:'Refresh balance',awards:'XP history',noAwards:'Complete a voluntary activity to earn your first XP.',badge:'First growth milestone · 300 XP',toward:'View development steps',invalid:'DEMO · NOT VALID'}
 };
-let questPending=null,questBusy=false,questMessage='';
-function resetRewardUI(){questPending=null;questBusy=false;questMessage='';}
+let questPending=null,questBusy=false,questMessage='',questRevision=0;
+Object.assign(QUEST_COPY.ru,{loading:'Обновляем кошелёк…'});
+Object.assign(QUEST_COPY.kk,{loading:'Әмиян жаңартылуда…'});
+Object.assign(QUEST_COPY.en,{loading:'Updating your wallet…'});
+function rewardFocusSelector(element){
+ if(!element)return null;
+ if(element.dataset?.questBuy)return `[data-quest-buy="${element.dataset.questBuy}"]`;
+ if(element.dataset?.questGoal)return `[data-quest-goal="${element.dataset.questGoal}"]`;
+ return element.id?'#'+element.id:null;
+}
+function focusReward(selector){
+ const target=selector&&$('rewards-panel').querySelector(selector);
+ (target&&!target.disabled?target:$('quest-status'))?.focus({preventScroll:true});
+}
+function resetRewardUI(){questPending=null;questBusy=false;questMessage='';++questRevision;}
 function renderRewards(){
  const panel=$('rewards-panel'),wallet=state.rewards,c=QUEST_COPY[state.lang]||QUEST_COPY.en;
  panel.hidden=state.auth?.role!=='employee'||!wallet;
  if(panel.hidden)return;
+ const focusSelector=panel.contains(document.activeElement)?rewardFocusSelector(document.activeElement):null;
+ // Keep the live region mounted while replacing cards, so updates are announced.
+ if(!$('quest-content'))panel.innerHTML='<div id="quest-content"></div><p id="quest-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" class="quest-message"></p><div id="quest-history"></div>';
  const label=item=>item.name[state.lang]||item.name.en;
+ const awardTitle=award=>{const activity=state.profile?.completed_activities?.find(item=>item.event_id===award.event_id);return activity?localEvent(activity).title:award.event_id;};
  const goal=wallet.catalog.find(item=>item.id===wallet.goal);
- panel.innerHTML=`<div class="section-header"><div><span class="section-kicker">${c.tag}</span><h2>${c.title}</h2></div><span class="quest-demo">DEMO</span></div><p class="quest-disclaimer">${c.demo}</p>
+ $('quest-content').innerHTML=`<div class="section-header"><div><span class="section-kicker">${c.tag}</span><h2>${c.title}</h2></div><span class="quest-demo">DEMO</span></div><p class="quest-disclaimer">${c.demo}</p>
  <div class="quest-wallet"><div><span>${c.balance}</span><strong>${wallet.balance} <small>XP</small></strong></div><div><span>${c.earned}</span><b>${wallet.earned} XP</b></div><div><span>${c.spent}</span><b>${wallet.spent} XP</b></div></div>
  ${wallet.earned>=300?`<p class="quest-badge">✦ ${c.badge}</p>`:''}
  ${goal?`<div class="quest-goal"><strong>${c.goal}: ${escapeHtml(label(goal))}</strong><progress max="${goal.cost}" value="${Math.min(wallet.balance,goal.cost)}" aria-label="${escapeHtml(c.goal)}"></progress><span>${wallet.balance} / ${goal.cost} XP · ${wallet.balance>=goal.cost?c.ready:c.need+' '+(goal.cost-wallet.balance)+' XP'}</span><a href="#recommendations-list">${c.toward} →</a></div>`:''}
  <details class="quest-rules"><summary>${c.details}</summary><p>${c.rules}</p></details>
  <div class="quest-catalog">${wallet.catalog.map(item=>`<article class="quest-reward"><span class="quest-icon" aria-hidden="true">${item.icon}</span><h3>${escapeHtml(label(item))}</h3><p>${escapeHtml(item.offer[state.lang]||item.offer.en)}</p><strong>${item.cost} XP</strong><div class="quest-actions"><button type="button" class="preview-button" data-quest-goal="${item.id}" ${questBusy?'disabled':''}>${wallet.goal===item.id?'✓ '+c.selected:c.pick}</button><button type="button" class="button-primary" data-quest-buy="${item.id}" ${questBusy||wallet.balance<item.cost?'disabled':''}>${c.redeem}</button></div>${wallet.balance<item.cost?`<small>${c.need}: ${item.cost-wallet.balance} XP</small>`:''}</article>`).join('')}</div>
  ${questPending?`<section class="quest-confirm" role="region" aria-label="${c.confirm}"><strong>${c.confirm}: ${escapeHtml(label(wallet.catalog.find(i=>i.id===questPending.reward)))}</strong><p>${c.confirmHint} ${wallet.catalog.find(i=>i.id===questPending.reward).cost} XP. ${c.invalid}</p><div class="quest-actions"><button type="button" id="quest-confirm" class="button-primary" ${questBusy?'disabled':''}>${c.confirm}</button><button type="button" id="quest-cancel" class="preview-button" ${questBusy?'disabled':''}>${c.cancel}</button></div></section>`:''}
- <p role="status" class="quest-message">${questMessage?c[questMessage]:''}</p><button type="button" id="quest-refresh" class="preview-button" ${questBusy?'disabled':''}>${c.refresh}</button>
- <h3>${c.codes}</h3><div class="quest-codes">${wallet.codes.map(code=>`<article><strong>${escapeHtml(label(wallet.catalog.find(item=>item.id===code.reward_id)))}</strong><span>${c.invalid}</span><code>${escapeHtml(code.code)}</code><small>${code.cost} XP · ${escapeHtml(code.date)}</small></article>`).join('')||`<p>${c.empty}</p>`}</div>
- <details class="quest-rules"><summary>${c.awards}</summary><ul>${wallet.awards.map(a=>`<li>${escapeHtml(a.date)} · ${escapeHtml(a.event_id)} · +${a.points} XP</li>`).join('')||`<li>${c.noAwards}</li>`}</ul></details>`;
+ <button type="button" id="quest-refresh" class="preview-button" ${questBusy?'disabled':''}>${c.refresh}</button>`;
+ $('quest-history').innerHTML=`<h3>${c.codes}</h3><div class="quest-codes">${wallet.codes.map(code=>`<article><strong>${escapeHtml(label(wallet.catalog.find(item=>item.id===code.reward_id)))}</strong><span>${c.invalid}</span><code>${escapeHtml(code.code)}</code><small>${code.cost} XP · ${escapeHtml(code.date)}</small></article>`).join('')||`<p>${c.empty}</p>`}</div>
+ <details class="quest-rules"><summary>${c.awards}</summary><ul>${wallet.awards.map(a=>`<li>${escapeHtml(a.date)} · ${escapeHtml(awardTitle(a))} · +${a.points} XP</li>`).join('')||`<li>${c.noAwards}</li>`}</ul></details>`;
+ $('quest-status').textContent=questBusy?c.loading:questMessage?c[questMessage]:'';
+ if(focusSelector)focusReward(focusSelector);
 }
 document.addEventListener('click',async event=>{
  const target=event.target.closest('#rewards-panel button');
  if(!target||questBusy||state.auth?.role!=='employee')return;
  if(target.dataset.questBuy){questPending={reward:target.dataset.questBuy,request:crypto.randomUUID()};questMessage='';renderRewards();document.querySelector('#quest-confirm').focus();return;}
- if(target.id==='quest-cancel'){questPending=null;renderRewards();return;}
- const owner=state.auth;questBusy=true;questMessage='';renderRewards();
+ if(target.id==='quest-cancel'){const reward=questPending?.reward;questPending=null;renderRewards();focusReward(`[data-quest-buy="${reward}"]`);return;}
+ const owner=state.auth,returnFocus=rewardFocusSelector(target);
+ // Invalidate profile-load wallets both before and after this request.
+ ++questRevision;questBusy=true;questMessage='';renderRewards();
  try{
   let wallet;
   if(target.dataset.questGoal)wallet=await fetchJson('/api/rewards/goal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reward_id:target.dataset.questGoal})});
@@ -35,5 +56,5 @@ document.addEventListener('click',async event=>{
   else wallet=await fetchJson('/api/rewards');
   if(state.auth===owner)state.rewards=wallet;
  }catch(error){if(state.auth===owner)questMessage='error';}
- finally{if(state.auth===owner){questBusy=false;renderRewards();}}
+ finally{if(state.auth===owner){const restoreFocus=$('rewards-panel').contains(document.activeElement);++questRevision;questBusy=false;renderRewards();if(restoreFocus)focusReward(questMessage==='success'?'#quest-status':returnFocus);}}
 });

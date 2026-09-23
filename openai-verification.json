@@ -1,22 +1,32 @@
 {
-  "timestamp": "2026-09-23T11:31:08.479388+00:00",
+  "timestamp": "2026-09-23T12:05:15.205249+00:00",
   "model": "gpt-4o-mini",
   "live_provider": "OpenAI",
   "profiles": [
     {
       "profile": "CONTROL_CRITICAL",
-      "passed": false,
-      "error": "missing_independent_factors",
-      "elapsed_seconds": 2.635
+      "passed": true,
+      "elapsed_seconds": 1.921,
+      "events": [
+        "EV_005",
+        "EV_006",
+        "EV_007"
+      ],
+      "checks": {
+        "one_to_three": true,
+        "under_ten_seconds": true,
+        "multiple_factors": true,
+        "eligible_events": true,
+        "critical_skill_first": true
+      }
     },
     {
       "profile": "CONTROL_PREREQUISITES",
       "passed": true,
-      "elapsed_seconds": 2.029,
+      "elapsed_seconds": 1.743,
       "events": [
         "EV_005",
-        "EV_012",
-        "EV_011"
+        "EV_012"
       ],
       "checks": {
         "one_to_three": true,
@@ -28,7 +38,7 @@
     {
       "profile": "CONTROL_REPEAT",
       "passed": true,
-      "elapsed_seconds": 1.57,
+      "elapsed_seconds": 1.192,
       "events": [
         "EV_036"
       ],
@@ -41,5 +51,5 @@
       }
     }
   ],
-  "passed": false
+  "passed": true
 }

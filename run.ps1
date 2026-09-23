@@ -1,3 +1,4 @@
+param([int]$Port = 8000)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $projectRoot '.venv\Scripts\python.exe'
@@ -18,4 +19,4 @@ finally {
 }
 
 Set-Location $projectRoot
-& $venvPython (Join-Path $projectRoot 'scripts\start.py')
+& $venvPython (Join-Path $projectRoot 'scripts\start.py') --port $Port

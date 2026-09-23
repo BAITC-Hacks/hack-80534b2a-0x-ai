@@ -356,8 +356,30 @@ def llm_select(employee: dict[str, Any], candidates: list[dict[str, Any]], lang:
                 "develops_skills": c["event"].get("develops_skills", []), "evidence": recommendation_evidence(c, employee),
                 "skills": c["covered"], "factors": eligible_factor_keys(c, employee), "score": c["score"],
                 "goal_contribution": c["goal_match"], "history_signal": c["history_signal"]} for c in candidates]
-    schema = {"type": "object", "properties": {"recommendations": {"type": "array", "maxItems": 3, "items": {"type": "object", "properties": {"event_id": {"type": "string", "enum": [c["event"]["event_id"] for c in candidates]}, "factor_keys": {"type": "array", "minItems": 3, "items": {"type": "string", "enum": ["critical_gap", "next_grade_gap", "current_grade_gap", "career_goal", "activity_fit", "history_fit"]}}}, "required": ["event_id", "factor_keys"], "additionalProperties": False}}}, "required": ["recommendations"], "additionalProperties": False}
-    payload = {"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"), "temperature": 0.1, "response_format": {"type": "json_schema", "json_schema": {"name": "career_recommendations", "strict": True, "schema": schema}}, "messages": [{"role": "system", "content": "Choose up to 3 distinct suitable voluntary development activities from the supplied eligible candidates. Use at least three distinct verified factors for every recommendation: activity_fit for current role/grade eligibility, history_fit for similar participation history (absence of history is neutral, never a positive record), and at least one of next_grade_gap, current_grade_gap or career_goal for skill requirements. Prioritize critical gaps. Use only factor keys offered for the candidate. Never invent facts. Return only the required JSON."}, {"role": "user", "content": json.dumps({"language": lang, "profile": {"role": employee["role"], "grade": employee["grade"], "career_goal": employee.get("career_goal"), "gaps": progress(employee)["gaps"]}, "history": [{"event_id": r["event_id"], "status": r.get("status"), "date": r.get("date")} for r in employee_history(employee["employee_id"])], "candidates": choices}, ensure_ascii=False)}]}
+    factors_schema = {
+        "type": "object", "properties": {
+            "activity": {"type": "string", "enum": ["activity_fit"]},
+            "history": {"type": "string", "enum": ["history_fit"]},
+            "progress": {"type": "string", "enum": ["next_grade_gap", "current_grade_gap", "career_goal"]},
+            "priority": {"type": ["string", "null"], "enum": ["critical_gap", None]},
+        }, "required": ["activity", "history", "progress", "priority"], "additionalProperties": False,
+    }
+    candidate_schemas = []
+    for candidate in candidates:
+        allowed = eligible_factor_keys(candidate, employee)
+        properties = {**factors_schema["properties"],
+            "progress": {"type": "string", "enum": [key for key in allowed if key in {"next_grade_gap", "current_grade_gap", "career_goal"}]},
+            "priority": ({"type": "string", "enum": ["critical_gap"]} if "critical_gap" in allowed else {"type": "null"}),
+        }
+        candidate_schemas.append({"type": "object", "properties": {
+            "event_id": {"type": "string", "enum": [candidate["event"]["event_id"]]},
+            "factor_keys": {**factors_schema, "properties": properties},
+        }, "required": ["event_id", "factor_keys"], "additionalProperties": False})
+    schema = {"type": "object", "properties": {"recommendations": {
+        "type": "array", "minItems": 1, "maxItems": 3,
+        "items": {"anyOf": candidate_schemas},
+    }}, "required": ["recommendations"], "additionalProperties": False}
+    payload = {"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"), "temperature": 0.1, "response_format": {"type": "json_schema", "json_schema": {"name": "career_recommendations", "strict": True, "schema": schema}}, "messages": [{"role": "system", "content": "Choose up to 3 distinct suitable voluntary development activities from the supplied eligible candidates. Use at least three distinct verified factors for every recommendation: activity_fit for current role/grade eligibility, history_fit for similar participation history (absence of history is neutral, never a positive record), and at least one of next_grade_gap, current_grade_gap or career_goal for skill requirements. Prioritize critical gaps. Use the required factor_keys object: activity=activity_fit, history=history_fit, progress=one offered gap/goal factor, priority=critical_gap when offered for the selected candidate, otherwise null. Use only factor keys offered for the candidate. Never invent facts. Return only the required JSON."}, {"role": "user", "content": json.dumps({"language": lang, "profile": {"role": employee["role"], "grade": employee["grade"], "career_goal": employee.get("career_goal"), "gaps": progress(employee)["gaps"]}, "history": [{"event_id": r["event_id"], "status": r.get("status"), "date": r.get("date")} for r in employee_history(employee["employee_id"])], "candidates": choices}, ensure_ascii=False)}]}
     request = urllib.request.Request("https://api.openai.com/v1/chat/completions", data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
     try:
         with urllib.request.urlopen(request, timeout=8) as response:
@@ -377,7 +399,15 @@ def llm_select(employee: dict[str, Any], candidates: list[dict[str, Any]], lang:
     if not isinstance(items, list) or not 1 <= len(items) <= 3:
         raise OpenAISelectionError("invalid_recommendation_count")
     for item in items:
-        event_id, factors = item.get("event_id"), item.get("factor_keys", [])
+        event_id, factor_object = item.get("event_id"), item.get("factor_keys")
+        if (not isinstance(factor_object, dict)
+                or set(factor_object) != {"activity", "history", "progress", "priority"}
+                or factor_object["activity"] != "activity_fit"
+                or factor_object["history"] != "history_fit"
+                or factor_object["progress"] not in {"next_grade_gap", "current_grade_gap", "career_goal"}
+                or factor_object["priority"] not in (None, "critical_gap")):
+            raise OpenAISelectionError("invalid_factor_categories")
+        factors = [factor_object[k] for k in ("progress", "activity", "history", "priority") if factor_object[k] is not None]
         if (not isinstance(factors, list) or not all(isinstance(f, str) for f in factors)
                 or event_id not in lookup or event_id in seen or len(set(factors)) < 3):
             raise OpenAISelectionError("invalid_event_or_factors")
@@ -404,7 +434,8 @@ def recommendations(employee: dict[str, Any], lang: str, use_llm: bool = True) -
         selected = llm_select(employee, candidates, lang)
         if not selected and candidates:
             raise RuntimeError("LLM returned no valid recommendations")
-    except Exception:
+    except Exception as exc:
+        fallback_reason = str(exc) if isinstance(exc, OpenAISelectionError) else "provider_response_or_runtime_error"
         source = "rules_fallback"
         selected = [(c, eligible_factor_keys(c, employee)) for c in candidates[:3]]
     result = []
@@ -413,7 +444,7 @@ def recommendations(employee: dict[str, Any], lang: str, use_llm: bool = True) -
         keys = list(dict.fromkeys([*gap_keys, *keys]))
         event = candidate["event"]
         result.append({"event_id": event["event_id"], "title": event["title"], "description": event["description"], "type": event["type"], "format": event["format"], "duration_hours": event["duration_hours"], "upcoming_sessions": event.get("upcoming_sessions", []), "reasons": [factor_copy(key, lang, event, candidate, employee) for key in keys], "factors": keys, "evidence": recommendation_evidence(candidate, employee), "develops_skills": event.get("develops_skills", [])})
-    return {"source": source, "recommendations": result, **completion_policy(employee)}
+    return {"source": source, "fallback_reason": fallback_reason if source == "rules_fallback" else None, "recommendations": result, **completion_policy(employee)}
 
 
 class CompleteRequest(BaseModel):

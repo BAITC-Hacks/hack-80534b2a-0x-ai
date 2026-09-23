@@ -170,7 +170,7 @@ class AcceptanceTests(unittest.TestCase):
     def test_real_parser_validates_model_selection(self):
         event_id = m.eligible_candidates(self.employee)[0]['event']['event_id']
         for selected, expected_source in [(event_id, 'ai'), ('UNKNOWN_EVENT', 'rules_fallback')]:
-            model_content = {'recommendations': [{'event_id': selected, 'factor_keys': ['next_grade_gap', 'activity_fit', 'history_fit']}]}
+            model_content = {'recommendations': [{'event_id': selected, 'factor_keys': {'progress':'next_grade_gap','activity':'activity_fit','history':'history_fit','priority':None}}]}
             response = io.BytesIO(json.dumps({'choices': [{'message': {'content': json.dumps(model_content)}}]}).encode())
             with patch.dict(m.os.environ, {'OPENAI_API_KEY': 'test-key'}), patch('urllib.request.urlopen', return_value=response):
                 result = m.recommendations(self.employee, 'en')

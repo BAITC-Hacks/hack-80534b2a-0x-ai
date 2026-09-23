@@ -1,5 +1,6 @@
 """Interactive local startup, including first-run account setup and API key."""
 import getpass
+import argparse
 import os
 import socket
 import sys
@@ -13,9 +14,14 @@ import uvicorn
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Start Career Quest locally.')
+    parser.add_argument('--port', type=int, default=8000)
+    args = parser.parse_args()
+    if not 1 <= args.port <= 65535:
+        parser.error('port must be between 1 and 65535')
     with socket.socket() as sock:
-        if sock.connect_ex(('127.0.0.1', 8000)) == 0:
-            print('Port 8000 is already in use. Stop the current server before running this command.')
+        if sock.connect_ex(('127.0.0.1', args.port)) == 0:
+            print(f'Port {args.port} is already in use. Stop the current server before running this command.')
             return 1
     app.init_state()
     with app.connect() as conn:
@@ -44,7 +50,7 @@ def main():
         print('Accounts created: employee and hr. Passwords are stored only as salted hashes.')
     print('AI provider:', 'OpenAI' if os.getenv('OPENAI_API_KEY') else 'rules fallback')
     print('Configure the OpenAI key on the website after signing in as HR.')
-    uvicorn.run(app.app, host='127.0.0.1', port=8000)
+    uvicorn.run(app.app, host='127.0.0.1', port=args.port)
     return 0
 
 

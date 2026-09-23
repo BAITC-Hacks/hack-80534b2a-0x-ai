@@ -74,11 +74,14 @@ class ExpandedRequirementsTests(unittest.TestCase):
         employee = m.STATE['employees']['E0001']
         candidate = m.eligible_candidates(employee)[0]
         gap = next(key for key in m.eligible_factor_keys(candidate, employee) if key in GAP_OR_GOAL)
+        good = {'progress': gap, 'activity': 'activity_fit', 'history': 'history_fit', 'priority': None}
         cases = [
-            ([gap, 'activity_fit'], 'rules_fallback'),
-            ([gap, 'activity_fit', 'activity_fit'], 'rules_fallback'),
-            ([gap, 'critical_gap', 'activity_fit'], 'rules_fallback'),
-            ([gap, 'activity_fit', 'history_fit'], 'ai'),
+            ({k:v for k,v in good.items() if k!='history'}, 'rules_fallback'),
+            ({**good, 'history':'activity_fit'}, 'rules_fallback'),
+            ({**good, 'progress':'critical_gap'}, 'rules_fallback'),
+            ({**good, 'extra':'career_goal'}, 'rules_fallback'),
+            ([gap, 'activity_fit', 'history_fit'], 'rules_fallback'),
+            (good, 'ai'),
         ]
         for keys, expected_source in cases:
             with self.subTest(keys=keys):
@@ -89,8 +92,10 @@ class ExpandedRequirementsTests(unittest.TestCase):
                 self.assertEqual(result['source'], expected_source)
                 request = provider.call_args.args[0]
                 payload = json.loads(request.data)
-                factors_schema = payload['response_format']['json_schema']['schema']['properties']['recommendations']['items']['properties']['factor_keys']
-                self.assertGreaterEqual(factors_schema['minItems'], 3)
+                factors_schema = payload['response_format']['json_schema']['schema']['properties']['recommendations']['items']['anyOf'][0]['properties']['factor_keys']
+                self.assertEqual(set(factors_schema['required']), {'activity','history','progress','priority'})
+                self.assertEqual(factors_schema['properties']['history']['enum'], ['history_fit'])
+                self.assertFalse(factors_schema['additionalProperties'])
                 for recommendation in result['recommendations']:
                     self.assert_three_factors(recommendation)
 

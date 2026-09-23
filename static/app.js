@@ -147,9 +147,12 @@ async function reload(){
   state.hr=result;state.aiSettings=aiSettings;state.profile=null;render();return;
  }
  const id=state.demo.employee_id;
+ const walletRevision=questRevision;
  const [profile,wallet]=await Promise.all([fetchJson('/api/profile/'+encodeURIComponent(id)),state.auth.role==='employee'?fetchJson('/api/rewards'):Promise.resolve(null)]);
  if(version!==requestVersion)return;
- state.profile=profile;state.hr=null;state.rewards=wallet;
+ state.profile=profile;state.hr=null;
+ // A rewards action may have changed this wallet since the GET started.
+ if(!questBusy&&walletRevision===questRevision)state.rewards=wallet;
  const preferred=localStorage.getItem('cq-lang-'+id)||profile.employee.preferred_language||'ru';
  state.recommendationStatus='loading';setLanguage(preferred,false);
  recommendationController=new AbortController();
