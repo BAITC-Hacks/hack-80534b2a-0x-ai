@@ -74,13 +74,16 @@ Object.assign(UI.en,{api_title:'AI recommendation settings',api_hint:'The key la
 Object.assign(UI.ru,{completion_blocked:'Оценка навыков уже сделана в дату среза. Выполнение не записывается: нужен срез позже даты оценки.',completion_unavailable:'Выполнение пока недоступно',effect_preview:'Предпросмотр результата',effect_hint:'Расчёт по правилам активности; это не запись выполнения и не обещание повышения.',required_level:'Требование',goal_skill:'Для карьерной цели',next_session:'Ближайшая сессия',available_anytime:'В любое время',session_unavailable:'Нет доступной сессии',imported_profiles:'Загруженные профили — открыть для просмотра',current_requirements:'Требования текущего грейда',top_grade:'Текущий уровень',profile_private:'🔒 Ваш профиль доступен вам и HR'});
 Object.assign(UI.kk,{completion_blocked:'Дағдылар деректер кесіндісі күні бағаланған. Орындалу жазылмайды: бағалау күнінен кейінгі деректер кесіндісі қажет.',completion_unavailable:'Әзірше орындау қолжетімсіз',effect_preview:'Нәтижені алдын ала көру',effect_hint:'Іс-шара ережелері бойынша есеп; орындалуды тіркемейді және жоғарылауға кепілдік бермейді.',required_level:'Талап',goal_skill:'Мансап мақсаты үшін',next_session:'Ең жақын сессия',available_anytime:'Кез келген уақытта',session_unavailable:'Қолжетімді сессия жоқ',imported_profiles:'Жүктелген профильдер — көру үшін ашу',current_requirements:'Қазіргі деңгей талаптары',top_grade:'Қазіргі деңгей',profile_private:'🔒 Профиліңіз сізге және HR маманына қолжетімді'});
 Object.assign(UI.en,{completion_blocked:'Skills were reviewed on the snapshot date. Completion cannot be recorded: a snapshot later than the review is required.',completion_unavailable:'Completion unavailable',effect_preview:'Result preview',effect_hint:'Calculated from activity rules; this does not record completion or guarantee promotion.',required_level:'Requirement',goal_skill:'For your career goal',next_session:'Next session',available_anytime:'Available anytime',session_unavailable:'No available session',imported_profiles:'Imported profiles — open to review',current_requirements:'Current grade requirements',top_grade:'Current level',profile_private:'🔒 Your profile is available to you and HR'});
+Object.assign(UI.ru,{recommendation_rate_limited:'Слишком много запросов рекомендаций. Повторите через минуту.'});
+Object.assign(UI.kk,{recommendation_rate_limited:'Ұсыныстарға тым көп сұрау жіберілді. Бір минуттан кейін қайталаңыз.'});
+Object.assign(UI.en,{recommendation_rate_limited:'Too many recommendation requests. Try again in one minute.'});
 const state={lang:localStorage.getItem('cq-lang')||'ru',role:null,auth:null,profile:null,hr:null,demo:null};
 const $=id=>document.getElementById(id);const t=key=>(UI[state.lang]||UI.en)[key]||UI.en[key]||key;
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function initials(name=''){return name.split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();}
 function localRole(value){const v=ROLE_TEXT[value];return state.lang==='en'||!v?value:v[state.lang==='ru'?0:1];}
 function localSkill(skill){const v=SKILL_TEXT[skill.skill_id];return state.lang==='en'||!v?skill.name:v[state.lang==='ru'?0:1];}
-function localReason(reason){let value=reason;for(const role of Object.keys(ROLE_TEXT))value=value.split(role).join(localRole(role));for(const skill of state.profile?.skills||[]){if(skill.name&&skill.name!==localSkill(skill))value=value.split(skill.name).join(localSkill(skill));}return value;}
+function localReason(reason){let value=reason;for(const role of Object.keys(ROLE_TEXT))value=value.split(role).join(localRole(role));for(const skill of [...(state.profile?.skills||[]),...(state.profile?.recommendations?.recommendations||[]).flatMap(item=>[...(item.evidence?.skill_effects||[]),...(item.evidence?.goal_effects||[])])].sort((a,b)=>(b.name?.length||0)-(a.name?.length||0))){if(skill.name&&skill.name!==localSkill(skill))value=value.split(skill.name).join(localSkill(skill));}return value;}
 function localEvent(item){const v=EVENT_TEXT[item.event_id];return v?{title:state.lang==='en'?item.title:v[state.lang==='ru'?0:1],description:state.lang==='en'?item.description:v[state.lang==='ru'?2:3]}:{title:item.title,description:item.description};}
 function setLanguage(lang,persist=true){state.lang=['ru','kk','en'].includes(lang)?lang:'ru';if(persist&&state.demo)localStorage.setItem('cq-lang-'+state.demo.employee_id,state.lang);document.documentElement.lang=state.lang;document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});$('language-select').value=state.lang;render();}
 async function api(path,options={}){
@@ -93,13 +96,14 @@ async function fetchJson(path,options){
  if(!res.ok){
   if(res.status===401&&!path.endsWith('/login'))showLogin();
   const detail=typeof body.detail==='string'?body.detail:(body.detail?.errors||[]).join('\n')||res.statusText;
-  const error=new Error(detail);error.status=res.status;throw error;
+  const messageKey=res.status===429&&detail==='recommendation_rate_limited'?'recommendation_rate_limited':res.status===409&&detail==='review_on_snapshot'?'completion_blocked':null;
+  const error=new Error(messageKey?t(messageKey):detail);error.status=res.status;error.messageKey=messageKey;throw error;
  }
  return body;
 }
 function showLogin(){
  ++requestVersion;recommendationController?.abort();
- state.auth=null;state.role=null;state.profile=null;state.hr=null;state.demo=null;state.completion=null;state.aiSettings=null;state.importedEmployeeIds=[];$('imported-profiles').replaceChildren();$('api-key-input').value='';$('api-key-result').textContent='';
+ state.recommendationError=null;state.auth=null;state.role=null;state.profile=null;state.hr=null;state.demo=null;state.completion=null;state.aiSettings=null;state.importedEmployeeIds=[];$('imported-profiles').replaceChildren();$('api-key-input').value='';$('api-key-result').textContent='';
  $('app-shell').hidden=true;$('login-view').hidden=false;$('loading-state').hidden=true;
  for(const id of ['skills-list','recommendations-list','hr-gaps-table','hr-risk-list'])$(id).replaceChildren();
  $('profile-name').textContent='—';$('sidebar-name').textContent='—';
@@ -119,6 +123,7 @@ async function init(){
 let requestVersion=0;
 let recommendationController;
 async function reload(){
+ state.recommendationError=null;
  const version=++requestVersion;
  recommendationController?.abort();
  if(state.role==='hr'){
@@ -137,7 +142,7 @@ async function reload(){
  const timer=setTimeout(()=>controller.abort(),10000);
  fetchJson('/api/recommendations/'+encodeURIComponent(id)+'?lang='+state.lang,{signal:controller.signal})
  .then(result=>{if(version===requestVersion){state.profile.recommendations=result;state.recommendationStatus='ready';render();}})
- .catch(error=>{if(version===requestVersion){state.recommendationStatus='error';render();}})
+ .catch(error=>{if(version===requestVersion){state.recommendationStatus='error';state.recommendationError=error.messageKey||'recommendations_error';render();}})
  .finally(()=>clearTimeout(timer));
 }
 
@@ -182,7 +187,7 @@ const name=e.full_name||e.employee_id;$('employee-name').textContent=name.split(
  const rec=p.recommendations?.recommendations||[];$('recommendations-list').innerHTML=rec.map((item,i)=>{const copy=localEvent(item);const done=employeeHasCompleted(item.event_id);return `<article class="rec-card"><div class="rec-card-top"><span class="rec-type">${escapeHtml(localizedType(item.type))}</span><span class="rec-number">0${i+1}</span></div><h3 class="rec-title">${escapeHtml(copy.title)}</h3><p class="rec-desc">${escapeHtml(copy.description)}</p><div class="reason-list">${item.reasons.map(reason=>`<div class="reason">${escapeHtml(localReason(reason))}</div>`).join('')}</div>${effectPreview(item)}<p class="session-preview">${escapeHtml(sessionPreview(item))}</p><div class="rec-meta"><span>${escapeHtml(t(item.format==='self_paced'?'self_paced':item.format==='offline'?'offline':'online'))}</span><span class="duration">◷ ${escapeHtml(item.duration_hours)} ${t('hours')}</span></div><button class="rec-button ${done?'done':''}" data-complete="${escapeHtml(item.event_id)}" ${done||blocked||state.auth.role==='hr'?'disabled':''}>${state.auth.role==='hr'?t('hr_preview'):done?t('completed'):blocked?t('completion_unavailable'):t('complete')}</button></article>`}).join('');$('empty-recommendations').hidden=rec.length>0;$('recommendations-list').hidden=!rec.length;const ai=p.recommendations?.source==='ai';document.querySelector('.ai-badge span:last-child').textContent=t(ai?'ai_active':'fallback_ai');document.querySelector('.ai-badge').classList.toggle('fallback',!ai);
  if(state.recommendationStatus!=='ready'){
   $('empty-recommendations').hidden=true;$('recommendations-list').hidden=false;
-  const message=state.recommendationStatus==='error'?t('recommendations_error'):t('recommendations_loading');
+  const message=state.recommendationStatus==='error'?t(state.recommendationError||'recommendations_error'):t('recommendations_loading');
   $('recommendations-list').innerHTML=`<div class="recommendation-status" role="status">${escapeHtml(message)}${state.recommendationStatus==='error'?` <button class="rec-button" id="retry-recommendations">${t('retry')}</button>`:''}</div>`;
   document.querySelector('.ai-badge span:last-child').textContent=t('ai_assistant');
  }
