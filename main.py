@@ -13,10 +13,12 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Depends, HTTPException, UploadFile, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+import auth
+from auth import Principal, require_session
 
 ROOT = Path(__file__).parent
 DATA = ROOT / "data"
@@ -76,6 +78,7 @@ def init_state() -> None:
             STATE["employees"][row["item_id"]] = json.loads(row["payload"])
         for row in conn.execute("SELECT payload FROM activity_history"):
             STATE["history"].append(json.loads(row["payload"]))
+    auth.init_storage(connect)
 
 
 @asynccontextmanager
@@ -85,19 +88,34 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="Career Quest", version="1.0.0", lifespan=lifespan)
+app.include_router(auth.router)
+
+
+@app.middleware("http")
+async def private_responses(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
+
+
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
-def role_required(role: str, header: str | None) -> None:
-    if header != role:
+def role_required(role: str, principal: Principal) -> None:
+    if not isinstance(principal, Principal) or principal.role != role:
         raise HTTPException(status_code=403, detail="Доступ запрещён для этой роли")
 
 
-def employee_required(employee_id: str, role: str | None, header_employee: str | None) -> dict[str, Any]:
-    role_required("employee", role)
-    # Demo identity is explicit. In a production deployment this header must be replaced by SSO identity.
-    if not header_employee or header_employee != employee_id:
-        raise HTTPException(status_code=403, detail="Можно открыть только собственный профиль")
+def employee_required(employee_id: str, principal: Principal, allow_hr: bool = False) -> dict[str, Any]:
+    if not isinstance(principal, Principal):
+        raise HTTPException(status_code=401, detail="Войдите в аккаунт")
+    if not (allow_hr and principal.role == "hr"):
+        role_required("employee", principal)
+        if principal.employee_id != employee_id:
+            raise HTTPException(status_code=403, detail="Можно открыть только собственный профиль")
     employee = STATE["employees"].get(employee_id)
     if not employee:
         raise HTTPException(status_code=404, detail="Сотрудник не найден")
@@ -243,28 +261,48 @@ def factor_copy(key: str, lang: str, event: dict[str, Any], candidate: dict[str,
     return lines.get(lang, lines["en"]).get(key, "")
 
 
+class OpenAISelectionError(RuntimeError):
+    """Safe diagnostic code; never includes provider bodies or credentials."""
+
+
 def llm_select(employee: dict[str, Any], candidates: list[dict[str, Any]], lang: str) -> list[tuple[dict[str, Any], list[str]]]:
     api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key or not candidates:
-        raise RuntimeError("OpenAI API key is not configured")
+    if not api_key:
+        raise OpenAISelectionError("missing_api_key")
+    if not candidates:
+        return []
+    import urllib.error
     import urllib.request
 
     choices = [{"event_id": c["event"]["event_id"], "title": c["event"]["title"], "type": c["event"]["type"], "duration_hours": c["event"]["duration_hours"], "skills": c["covered"], "factors": eligible_factor_keys(c, employee), "score": c["score"], "history_signal": c["history_signal"]} for c in candidates]
     schema = {"type": "object", "properties": {"recommendations": {"type": "array", "maxItems": 3, "items": {"type": "object", "properties": {"event_id": {"type": "string", "enum": [c["event"]["event_id"] for c in candidates]}, "factor_keys": {"type": "array", "minItems": 2, "items": {"type": "string", "enum": ["critical_gap", "next_grade_gap", "career_goal", "activity_fit", "history_fit"]}}}, "required": ["event_id", "factor_keys"], "additionalProperties": False}}}, "required": ["recommendations"], "additionalProperties": False}
     payload = {"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"), "temperature": 0.1, "response_format": {"type": "json_schema", "json_schema": {"name": "career_recommendations", "strict": True, "schema": schema}}, "messages": [{"role": "system", "content": "Choose up to 3 distinct suitable voluntary development activities from the supplied eligible candidates. Use multiple factors, especially critical next-grade gaps and participation history. Never invent facts. Return only the required JSON."}, {"role": "user", "content": json.dumps({"language": lang, "profile": {"role": employee["role"], "grade": employee["grade"], "career_goal": employee.get("career_goal"), "gaps": progress(employee)["gaps"]}, "history": [{"event_id": r["event_id"], "status": r.get("status"), "date": r.get("date")} for r in employee_history(employee["employee_id"])], "candidates": choices}, ensure_ascii=False)}]}
     request = urllib.request.Request("https://api.openai.com/v1/chat/completions", data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(request, timeout=8) as response:
-        response_data = json.loads(response.read())
-    content = json.loads(response_data["choices"][0]["message"]["content"])
+    try:
+        with urllib.request.urlopen(request, timeout=8) as response:
+            response_data = json.loads(response.read())
+    except urllib.error.HTTPError as exc:
+        raise OpenAISelectionError(f"provider_http_{exc.code}") from None
+    except (TimeoutError, urllib.error.URLError):
+        raise OpenAISelectionError("provider_connection_or_timeout") from None
+    choice = response_data["choices"][0]
+    if choice.get("finish_reason", "stop") != "stop" or choice["message"].get("refusal"):
+        raise OpenAISelectionError("provider_refusal_or_incomplete_response")
+    content = json.loads(choice["message"]["content"])
     lookup = {c["event"]["event_id"]: c for c in candidates}
     selected = []
     seen = set()
-    for item in content.get("recommendations", []):
+    items = content.get("recommendations", [])
+    if not isinstance(items, list) or not 1 <= len(items) <= 3:
+        raise OpenAISelectionError("invalid_recommendation_count")
+    for item in items:
         event_id, factors = item.get("event_id"), item.get("factor_keys", [])
         if event_id not in lookup or event_id in seen or len(set(factors)) < 2:
-            continue
+            raise OpenAISelectionError("invalid_event_or_factors")
         allowed = set(eligible_factor_keys(lookup[event_id], employee))
-        factors = [factor for factor in dict.fromkeys(factors) if factor in allowed]
+        if not set(factors) <= allowed:
+            raise OpenAISelectionError("unsupported_factors")
+        factors = list(dict.fromkeys(factors))
         if len(factors) < 2:
             continue
         selected.append((lookup[event_id], factors))
@@ -313,13 +351,13 @@ def health() -> dict[str, str]:
 
 
 @app.get("/api/demo")
-def demo_info() -> dict[str, Any]:
-    return {"employee_id": os.getenv("DEMO_EMPLOYEE_ID", "E0001"), "employee_name": STATE["employees"].get(os.getenv("DEMO_EMPLOYEE_ID", "E0001"), {}).get("full_name", "Demo employee"), "as_of_date": STATE["skills"]["meta"]["as_of_date"], "employee_count": len(STATE["employees"])}
+def demo_info(principal: Principal = Depends(require_session)) -> dict[str, Any]:
+    return {"employee_id": principal.employee_id, "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
 
 
 @app.get("/api/profile/{employee_id}")
-def get_profile(employee_id: str, lang: str = "ru", x_demo_role: str | None = Header(None), x_employee_id: str | None = Header(None)) -> dict[str, Any]:
-    employee = employee_required(employee_id, x_demo_role, x_employee_id)
+def get_profile(employee_id: str, lang: str = "ru", principal: Principal = Depends(require_session)) -> dict[str, Any]:
+    employee = employee_required(employee_id, principal, allow_hr=True)
     next_profile = current_grade_profile(employee, True)
     current = current_grade_profile(employee)
     skills_by_id = {s["skill_id"]: s for s in STATE["skills"]["skills"]}
@@ -329,8 +367,8 @@ def get_profile(employee_id: str, lang: str = "ru", x_demo_role: str | None = He
 
 
 @app.get("/api/recommendations/{employee_id}")
-async def get_recommendations(employee_id: str, lang: str = "ru", x_demo_role: str | None = Header(None), x_employee_id: str | None = Header(None)) -> dict[str, Any]:
-    employee = employee_required(employee_id, x_demo_role, x_employee_id)
+async def get_recommendations(employee_id: str, lang: str = "ru", principal: Principal = Depends(require_session)) -> dict[str, Any]:
+    employee = employee_required(employee_id, principal, allow_hr=True)
     try:
         return await asyncio.wait_for(asyncio.to_thread(recommendations, employee, lang), timeout=8.5)
     except asyncio.TimeoutError:
@@ -338,8 +376,8 @@ async def get_recommendations(employee_id: str, lang: str = "ru", x_demo_role: s
 
 
 @app.post("/api/complete")
-def complete_activity(body: CompleteRequest, x_demo_role: str | None = Header(None), x_employee_id: str | None = Header(None)) -> dict[str, Any]:
-    employee = employee_required(body.employee_id, x_demo_role, x_employee_id)
+def complete_activity(body: CompleteRequest, principal: Principal = Depends(require_session)) -> dict[str, Any]:
+    employee = employee_required(body.employee_id, principal)
     event = STATE["events"].get(body.event_id)
     if not event or event.get("mandatory") or body.event_id not in {c["event"]["event_id"] for c in eligible_candidates(employee)}:
         raise HTTPException(status_code=400, detail="Эта активность сейчас недоступна")
@@ -476,8 +514,8 @@ def validate_import(employees: list[dict[str, Any]], history: list[dict[str, Any
 
 
 @app.post("/api/import")
-async def import_data(employees_file: UploadFile | None = File(None), history_file: UploadFile | None = File(None), x_demo_role: str | None = Header(None)) -> dict[str, Any]:
-    role_required("hr", x_demo_role)
+async def import_data(employees_file: UploadFile | None = File(None), history_file: UploadFile | None = File(None), principal: Principal = Depends(require_session)) -> dict[str, Any]:
+    role_required("hr", principal)
     if not employees_file and not history_file:
         raise HTTPException(status_code=400, detail="Загрузите employees.json и/или activity_history.csv")
     try:
@@ -503,8 +541,8 @@ async def import_data(employees_file: UploadFile | None = File(None), history_fi
 
 
 @app.get("/api/hr")
-def hr_summary(x_demo_role: str | None = Header(None)) -> dict[str, Any]:
-    role_required("hr", x_demo_role)
+def hr_summary(principal: Principal = Depends(require_session)) -> dict[str, Any]:
+    role_required("hr", principal)
     gaps = defaultdict(lambda: {"employees": 0, "total_gap": 0, "critical_count": 0})
     grouped_gaps = defaultdict(lambda: defaultdict(lambda: {"employees": 0, "total_gap": 0, "critical_count": 0}))
     slipping = []

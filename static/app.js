@@ -62,7 +62,10 @@ Object.assign(UI.en,{recommendations_loading:'Finding your next steps…',recomm
 Object.assign(UI.ru,{critical_tooltip:'Критичный навык: для перехода на следующий грейд нужно достичь указанного уровня.'});
 Object.assign(UI.kk,{critical_tooltip:'Маңызды дағды: келесі грейдке өту үшін көрсетілген деңгейге жету қажет.'});
 Object.assign(UI.en,{critical_tooltip:'Critical skill: you must reach the required level to advance to the next grade.'});
-const state={lang:localStorage.getItem('cq-lang')||'ru',role:sessionStorage.getItem('cq-role')||'employee',profile:null,hr:null,demo:null};
+Object.assign(UI.ru,{login_title:'Войдите в свой аккаунт',login_hint:'Ваш профиль и путь развития — в личном кабинете.',login_username:'Логин',login_password:'Пароль',login_submit:'Войти',logout:'Выйти',login_failed:'Не удалось войти. Проверьте логин и пароль.',login_throttled:'Слишком много попыток. Повторите через 5 минут.',hr_preview:'Просмотр профиля HR',profile_private:'🔒 Ваш профиль доступен вам и HR',access_error:'Недостаточно прав доступа.'});
+Object.assign(UI.kk,{login_title:'Аккаунтыңызға кіріңіз',login_hint:'Профиліңіз бен даму жолыңыз — жеке кабинетте.',login_username:'Логин',login_password:'Құпиясөз',login_submit:'Кіру',logout:'Шығу',login_failed:'Кіру мүмкін болмады. Логин мен құпиясөзді тексеріңіз.',login_throttled:'Тым көп әрекет. 5 минуттан кейін қайталаңыз.',hr_preview:'HR профильді қарауда',profile_private:'🔒 Профиль сізге және HR-ға қолжетімді',access_error:'Қолжетімділік құқығы жеткіліксіз.'});
+Object.assign(UI.en,{login_title:'Sign in to your account',login_hint:'Your profile and growth journey, in one place.',login_username:'Username',login_password:'Password',login_submit:'Sign in',logout:'Sign out',login_failed:'Could not sign in. Check your username and password.',login_throttled:'Too many attempts. Try again in 5 minutes.',hr_preview:'HR profile preview',profile_private:'🔒 Your profile is available to you and HR',access_error:'You do not have permission.'});
+const state={lang:localStorage.getItem('cq-lang')||'ru',role:null,auth:null,profile:null,hr:null,demo:null};
 const $=id=>document.getElementById(id);const t=key=>(UI[state.lang]||UI.en)[key]||UI.en[key]||key;
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function initials(name=''){return name.split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();}
@@ -71,9 +74,39 @@ function localSkill(skill){const v=SKILL_TEXT[skill.skill_id];return state.lang=
 function localReason(reason){let value=reason;for(const skill of state.profile?.skills||[]){if(skill.name&&skill.name!==localSkill(skill))value=value.split(skill.name).join(localSkill(skill));}return value;}
 function localEvent(item){const v=EVENT_TEXT[item.event_id];return v?{title:state.lang==='en'?item.title:v[state.lang==='ru'?0:1],description:state.lang==='en'?item.description:v[state.lang==='ru'?2:3]}:{title:item.title,description:item.description};}
 function setLanguage(lang,persist=true){state.lang=['ru','kk','en'].includes(lang)?lang:'ru';if(persist&&state.demo)localStorage.setItem('cq-lang-'+state.demo.employee_id,state.lang);document.documentElement.lang=state.lang;document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.dataset.i18n)});$('language-select').value=state.lang;render();}
-async function api(path,options={}){const headers=new Headers(options.headers||{});headers.set('X-Demo-Role',state.role);if(state.role==='employee')headers.set('X-Employee-Id',state.demo?.employee_id||'E0001');return fetch(path,{...options,headers});}
-async function fetchJson(path,options){const res=await api(path,options);let body;try{body=await res.json()}catch{body={}}if(!res.ok){const detail=typeof body.detail==='string'?body.detail:(body.detail?.errors||[]).join('\n')||res.statusText;throw new Error(detail)}return body;}
-async function init(){try{state.demo=await fetchJson('/api/demo',{headers:{'X-Demo-Role':'employee','X-Employee-Id':'E0001'}});state.demo.employee_id=sessionStorage.getItem('cq-profile-id')||state.demo.employee_id;await reload();$('snapshot-date').textContent=state.profile?.as_of_date||state.demo.as_of_date;setLanguage(state.lang,false);$('loading-state').hidden=true;showView();}catch(e){$('loading-state').hidden=true;$('error-state').hidden=false;$('error-state').textContent=t('loading_error')+' '+e.message;}}
+async function api(path,options={}){
+ const headers=new Headers(options.headers||{});
+ if(state.auth?.csrf_token)headers.set('X-CSRF-Token',state.auth.csrf_token);
+ return fetch(path,{...options,headers,credentials:'same-origin',cache:'no-store'});
+}
+async function fetchJson(path,options){
+ const res=await api(path,options);let body;try{body=await res.json()}catch{body={}}
+ if(!res.ok){
+  if(res.status===401&&!path.endsWith('/login'))showLogin();
+  const detail=typeof body.detail==='string'?body.detail:(body.detail?.errors||[]).join('\n')||res.statusText;
+  const error=new Error(detail);error.status=res.status;throw error;
+ }
+ return body;
+}
+function showLogin(){
+ ++requestVersion;recommendationController?.abort();
+ state.auth=null;state.role=null;state.profile=null;state.hr=null;state.demo=null;
+ $('app-shell').hidden=true;$('login-view').hidden=false;$('loading-state').hidden=true;
+ for(const id of ['skills-list','recommendations-list','hr-gaps-table','hr-risk-list'])$(id).replaceChildren();
+ $('profile-name').textContent='—';$('sidebar-name').textContent='—';
+ render();
+}
+async function enterSession(session){
+ state.auth=session;state.role=session.role;
+ state.demo=await fetchJson('/api/demo');
+ $('login-view').hidden=true;$('app-shell').hidden=false;$('loading-state').hidden=false;
+ $('error-state').hidden=true;$('login-password').value='';
+ await reload();$('loading-state').hidden=true;
+}
+async function init(){
+ try{await enterSession(await fetchJson('/api/auth/session'));}
+ catch(error){showLogin();if(error.status!==401)$('login-error').textContent=t('loading_error');}
+}
 let requestVersion=0;
 let recommendationController;
 async function reload(){
@@ -84,7 +117,7 @@ async function reload(){
   if(version!==requestVersion)return;
   state.hr=result;state.profile=null;render();return;
  }
- const id=state.demo?.employee_id||'E0001';
+ const id=state.demo.employee_id;
  const profile=await fetchJson('/api/profile/'+encodeURIComponent(id));
  if(version!==requestVersion)return;
  state.profile=profile;state.hr=null;
@@ -99,11 +132,26 @@ async function reload(){
  .finally(()=>clearTimeout(timer));
 }
 
-function showView(){const isHr=state.role==='hr';$('employee-view').hidden=isHr;$('hr-view').hidden=!isHr;$('nav-hr').hidden=!isHr;$('nav-growth').classList.toggle('active',!isHr);$('nav-hr').classList.toggle('active',isHr);$('breadcrumb-page').textContent=t(isHr?'hr_dashboard':'my_growth');$('role-label').textContent=t(isHr?'role_employee':'role_hr');$('sidebar-role').textContent=isHr?'Human Resources':localRole(state.profile?.employee?.role||'Career Quest');}
-function render(){document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));$('language-select').value=state.lang;if(state.profile)renderProfile();if(state.hr)renderHr();showView();}
+function showView(){
+ if(!state.auth)return;
+ const isHr=state.role==='hr',canHr=state.auth.role==='hr';
+ $('employee-view').hidden=isHr;$('hr-view').hidden=!isHr;
+ $('nav-hr').hidden=!canHr;$('nav-growth').hidden=canHr&&isHr;
+ $('nav-growth').classList.toggle('active',!isHr);$('nav-hr').classList.toggle('active',isHr);
+ $('breadcrumb-page').textContent=t(isHr?'hr_dashboard':canHr?'hr_preview':'my_growth');
+ $('role-label').textContent=t('logout');
+ if(isHr){$('sidebar-name').textContent=state.auth.username;$('sidebar-role').textContent='HR';$('user-avatar').textContent=initials(state.auth.username);}
+}
+function render(){
+ document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
+ $('language-select').value=state.lang;$('login-language').value=state.lang;
+ if(!state.auth)return;
+ if(state.profile)renderProfile();if(state.hr)renderHr();showView();
+}
+
 function renderProfile(){const p=state.profile,e=p.employee,progress=p.progress;const name=e.full_name||e.employee_id;$('employee-name').textContent=name.split(' ')[0];$('profile-name').textContent=name;$('profile-title').textContent=localRole(e.role)+' · '+e.grade;$('department-name').textContent=e.department;$('last-review').textContent=e.last_review_date||t('no_date');$('tenure-label').textContent=(e.tenure_months>=12?`${Math.floor(e.tenure_months/12)} ${t('years')}`:`${e.tenure_months} ${t('months')}`);$('profile-avatar').textContent=initials(name);$('user-avatar').textContent=initials(name);$('sidebar-name').textContent=name;$('sidebar-role').textContent=localRole(e.role);$('snapshot-date').textContent=p.as_of_date;$('current-grade').textContent=e.grade;$('target-grade').textContent=progress.target_grade||t('no_target');const gaps=progress.gaps||[];const met=gaps.filter(g=>g.gap===0).length;const percent=gaps.length?Math.round(met/gaps.length*100):100;$('progress-percent').textContent=percent+'%';$('met-skills').textContent=`${met} ${t('of')} ${gaps.length}`;$('progress-fill').style.width=percent+'%';const critical=gaps.filter(g=>g.critical&&g.gap>0).slice(0,2);$('critical-copy').textContent=critical.length?`${t('critical_skill')}: ${critical.map(g=>localSkill(g)).join(', ')}`:t('no_gaps');$('skills-count').textContent=progress.improved_skill_count||0;$('activities-count').textContent=progress.completed_since_review||0;
  const rows=[...p.skills].sort((a,b)=>(b.critical-a.critical)||b.gap-a.gap);const skillRows=rows.map((g,index)=>{const level=Number(g.level)||0,required=Number(g.required)||0;const pct=Math.min(100,level/5*100);return `<div class="skill-row" style="order:${index}"><div class="skill-label ${g.critical?'critical':''}">${g.critical?`<span class="critical-marker"><button type="button" class="critical-trigger" aria-label="${escapeHtml(t('critical_skill'))}" aria-describedby="critical-tip-${escapeHtml(g.skill_id)}"><span class="skill-dot" aria-hidden="true"></span></button><span class="critical-tooltip" role="tooltip" id="critical-tip-${escapeHtml(g.skill_id)}">${escapeHtml(t('critical_tooltip'))}</span></span>`:''}<details class="skill-description"><summary>${escapeHtml(localSkill(g))}</summary><p>${escapeHtml(state.lang==='en'?g.description:SKILL_DESCRIPTIONS[g.skill_id]?.[state.lang==='ru'?0:1]||g.description)}</p></details></div><div class="skill-meter"><span class="${g.gap===0?'complete':''}" style="width:${pct}%"></span></div><div class="skill-number"><strong>${level}</strong>/${required} ${t('skill_level')}</div></div>`});$('skills-list').innerHTML=[0,1].map(column=>`<div class="skills-column">${skillRows.filter((_,index)=>index%2===column).join('')}</div>`).join('');
- const rec=p.recommendations?.recommendations||[];$('recommendations-list').innerHTML=rec.map((item,i)=>{const copy=localEvent(item);const done=employeeHasCompleted(item.event_id);return `<article class="rec-card"><div class="rec-card-top"><span class="rec-type">${escapeHtml(localizedType(item.type))}</span><span class="rec-number">0${i+1}</span></div><h3 class="rec-title">${escapeHtml(copy.title)}</h3><p class="rec-desc">${escapeHtml(copy.description)}</p><div class="reason-list">${item.reasons.map(reason=>`<div class="reason">${escapeHtml(localReason(reason))}</div>`).join('')}</div><div class="rec-meta"><span>${escapeHtml(t(item.format==='self_paced'?'self_paced':item.format==='offline'?'offline':'online'))}</span><span class="duration">◷ ${escapeHtml(item.duration_hours)} ${t('hours')}</span></div><button class="rec-button ${done?'done':''}" data-complete="${escapeHtml(item.event_id)}" ${done?'disabled':''}>${done?t('completed'):t('complete')}</button></article>`}).join('');$('empty-recommendations').hidden=rec.length>0;$('recommendations-list').hidden=!rec.length;const ai=p.recommendations?.source==='ai';document.querySelector('.ai-badge span:last-child').textContent=t(ai?'ai_active':'fallback_ai');document.querySelector('.ai-badge').classList.toggle('fallback',!ai);
+ const rec=p.recommendations?.recommendations||[];$('recommendations-list').innerHTML=rec.map((item,i)=>{const copy=localEvent(item);const done=employeeHasCompleted(item.event_id);return `<article class="rec-card"><div class="rec-card-top"><span class="rec-type">${escapeHtml(localizedType(item.type))}</span><span class="rec-number">0${i+1}</span></div><h3 class="rec-title">${escapeHtml(copy.title)}</h3><p class="rec-desc">${escapeHtml(copy.description)}</p><div class="reason-list">${item.reasons.map(reason=>`<div class="reason">${escapeHtml(localReason(reason))}</div>`).join('')}</div><div class="rec-meta"><span>${escapeHtml(t(item.format==='self_paced'?'self_paced':item.format==='offline'?'offline':'online'))}</span><span class="duration">◷ ${escapeHtml(item.duration_hours)} ${t('hours')}</span></div><button class="rec-button ${done?'done':''}" data-complete="${escapeHtml(item.event_id)}" ${done||state.auth.role==='hr'?'disabled':''}>${state.auth.role==='hr'?t('hr_preview'):done?t('completed'):t('complete')}</button></article>`}).join('');$('empty-recommendations').hidden=rec.length>0;$('recommendations-list').hidden=!rec.length;const ai=p.recommendations?.source==='ai';document.querySelector('.ai-badge span:last-child').textContent=t(ai?'ai_active':'fallback_ai');document.querySelector('.ai-badge').classList.toggle('fallback',!ai);
  if(state.recommendationStatus!=='ready'){
   $('empty-recommendations').hidden=true;$('recommendations-list').hidden=false;
   const message=state.recommendationStatus==='error'?t('recommendations_error'):t('recommendations_loading');
@@ -126,9 +174,20 @@ for(const filter of ['hr-role-filter','hr-grade-filter'])$(filter).addEventListe
 function localizedType(type){const maps={ru:{course:'Курс',workshop:'Практикум',mentoring:'Менторство',certification:'Сертификация',meetup:'Встреча',onboarding:'Адаптация'},kk:{course:'Курс',workshop:'Практикум',mentoring:'Тәлімгерлік',certification:'Сертификат',meetup:'Кездесу',onboarding:'Бейімделу'},en:{course:'Course',workshop:'Workshop',mentoring:'Mentoring',certification:'Certification',meetup:'Meetup',onboarding:'Onboarding'}};return maps[state.lang]?.[type]||type;}
 document.addEventListener('click',async event=>{if(event.target.closest('#retry-recommendations')){await reload();return;}const button=event.target.closest('[data-complete]');if(button){button.disabled=true;try{await fetchJson('/api/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:state.demo.employee_id,event_id:button.dataset.complete})});await reload();}catch(error){button.disabled=false;alert(error.message)}}});
 $('language-select').addEventListener('change',async e=>{setLanguage(e.target.value);try{await reload()}catch(error){showError(error)}});
-$('role-button').addEventListener('click',async()=>{state.role=state.role==='hr'?'employee':'hr';sessionStorage.setItem('cq-role',state.role);$('loading-state').hidden=false;try{await reload();$('loading-state').hidden=true}catch(error){$('loading-state').hidden=true;state.role='employee';sessionStorage.setItem('cq-role',state.role);showError(error)}});
-$('nav-growth').addEventListener('click',()=>{if(state.role!=='employee')$('role-button').click()});$('nav-hr').addEventListener('click',()=>{if(state.role!=='hr')$('role-button').click()});
+$('role-button').addEventListener('click',async()=>{
+ try{await fetchJson('/api/auth/logout',{method:'POST'});showLogin();}
+ catch(error){if(error.status===401)showLogin();else showError(error);}
+});
+$('nav-hr').addEventListener('click',async()=>{if(state.auth?.role==='hr'){state.role='hr';await reload();}});
+$('nav-growth').addEventListener('click',async()=>{if(state.auth?.role==='employee'){state.role='employee';await reload();}});
+$('login-language').addEventListener('change',e=>{setLanguage(e.target.value,false);localStorage.setItem('cq-lang',state.lang);});
+$('login-form').addEventListener('submit',async event=>{
+ event.preventDefault();$('login-submit').disabled=true;$('login-error').textContent='';
+ try{const session=await fetchJson('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('login-username').value,password:$('login-password').value})});await enterSession(session);}
+ catch(error){$('login-error').textContent=t(error.status===429?'login_throttled':'login_failed');}
+ finally{$('login-submit').disabled=false;$('login-password').value='';}
+});
 $('import-form').addEventListener('submit',async e=>{e.preventDefault();const profile=$('employees-file').files[0],history=$('history-file').files[0],output=$('upload-result');output.className='upload-result';if(!profile&&!history){output.textContent=t('choose_file');output.classList.add('error');return}const form=new FormData();if(profile)form.append('employees_file',profile);if(history)form.append('history_file',history);output.textContent=t('uploading');try{const result=await fetchJson('/api/import',{method:'POST',body:form});output.textContent=t('upload_success').replace('{e}',result.employees_imported).replace('{h}',result.history_imported);await reload()}catch(error){output.textContent=error.message;output.classList.add('error')}});
-$('preview-profile').addEventListener('click',async()=>{const id=$('test-profile-id').value.trim();if(!id){$('upload-result').textContent=t('choose_file');$('upload-result').classList.add('error');return}state.demo.employee_id=id;sessionStorage.setItem('cq-profile-id',id);state.role='employee';sessionStorage.setItem('cq-role',state.role);$('loading-state').hidden=false;try{await reload();$('loading-state').hidden=true;$('error-state').hidden=true;showView()}catch(error){$('loading-state').hidden=true;showError(error)}});
+$('preview-profile').addEventListener('click',async()=>{if(state.auth?.role!=='hr')return;const id=$('test-profile-id').value.trim();if(!id){$('upload-result').textContent=t('choose_file');$('upload-result').classList.add('error');return}state.demo.employee_id=id;state.role='employee';$('loading-state').hidden=false;try{await reload();$('loading-state').hidden=true;$('error-state').hidden=true;showView()}catch(error){$('loading-state').hidden=true;showError(error)}});
 function showError(error){$('error-state').hidden=false;$('error-state').textContent=t('error_prefix')+' '+error.message;}
 init();

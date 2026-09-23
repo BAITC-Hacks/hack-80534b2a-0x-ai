@@ -11,6 +11,10 @@ from unittest.mock import patch
 from fastapi import HTTPException, UploadFile
 
 import main as m
+from auth import Principal
+
+EMPLOYEE = Principal("employee", "employee", "E0001")
+HR = Principal("hr", "hr", None)
 
 
 class AcceptanceTests(unittest.TestCase):
@@ -77,7 +81,7 @@ class AcceptanceTests(unittest.TestCase):
         upload = UploadFile(filename='profiles.json', file=io.BytesIO(json.dumps({'employees': [emp, None]}).encode()))
         before = len(m.STATE['employees'])
         with self.assertRaises(HTTPException) as caught:
-            asyncio.run(m.import_data(upload, None, 'hr'))
+            asyncio.run(m.import_data(upload, None, HR))
         self.assertEqual(caught.exception.status_code, 422)
         self.assertTrue(caught.exception.detail['errors'])
         self.assertEqual(len(m.STATE['employees']), before)
@@ -87,31 +91,31 @@ class AcceptanceTests(unittest.TestCase):
     def test_successful_import_persists_and_updates_hr(self):
         emp = self.new_profile()
         upload = UploadFile(filename='profiles.json', file=io.BytesIO(json.dumps({'employees': [emp]}).encode()))
-        result = asyncio.run(m.import_data(upload, None, 'hr'))
+        result = asyncio.run(m.import_data(upload, None, HR))
         self.assertEqual(result['employees_imported'], 1)
         m.init_state()
         self.assertIn(emp['employee_id'], m.STATE['employees'])
-        self.assertEqual(m.hr_summary('hr')['employee_count'], 201)
+        self.assertEqual(m.hr_summary(HR)['employee_count'], 201)
 
     def test_all_hr_deficits_included(self):
-        self.assertEqual(len(m.hr_summary('hr')['competency_gaps']), 60)
+        self.assertEqual(len(m.hr_summary(HR)['competency_gaps']), 60)
 
     def test_profile_does_not_wait_for_llm(self):
         with patch.object(m, 'llm_select', side_effect=AssertionError('Profile must not call LLM')):
-            result = m.get_profile('E0001', 'ru', 'employee', 'E0001')
+            result = m.get_profile('E0001', 'ru', EMPLOYEE)
         self.assertNotIn('recommendations', result)
         self.assertIn('progress', result)
 
     def test_role_and_employee_boundaries(self):
-        for role in [None, 'employee']:
+        for role in [None, EMPLOYEE]:
             with self.assertRaises(HTTPException):
                 m.hr_summary(role)
         with self.assertRaises(HTTPException):
-            m.get_profile('E0002', 'ru', 'employee', 'E0001')
+            m.get_profile('E0002', 'ru', EMPLOYEE)
         with self.assertRaises(HTTPException):
-            asyncio.run(m.get_recommendations('E0002', 'ru', 'employee', 'E0001'))
+            asyncio.run(m.get_recommendations('E0002', 'ru', EMPLOYEE))
         with self.assertRaises(HTTPException):
-            asyncio.run(m.import_data(None, None, 'employee'))
+            asyncio.run(m.import_data(None, None, EMPLOYEE))
 
     def test_filters_and_repeat_exception(self):
         self.employee['grade'] = 'Middle'
@@ -134,7 +138,7 @@ class AcceptanceTests(unittest.TestCase):
         candidates = m.eligible_candidates(employee)
         self.assertTrue(candidates)
         event = candidates[0]['event']['event_id']
-        result = m.complete_activity(m.CompleteRequest(employee_id='E0001', event_id=event), 'employee', 'E0001')
+        result = m.complete_activity(m.CompleteRequest(employee_id='E0001', event_id=event), EMPLOYEE)
         self.assertEqual(m.STATE['history'][-1]['date'], '2026-10-01')
         m.init_state()
         self.assertEqual(m.progress(m.STATE['employees']['E0001']), result['progress'])
@@ -163,10 +167,10 @@ class AcceptanceTests(unittest.TestCase):
 
         async def scenario():
             start = time.perf_counter()
-            task = asyncio.create_task(m.get_recommendations('E0001', 'ru', 'employee', 'E0001'))
+            task = asyncio.create_task(m.get_recommendations('E0001', 'ru', EMPLOYEE))
             await asyncio.sleep(0.05)
             profile_start = time.perf_counter()
-            profile = m.get_profile('E0001', 'ru', 'employee', 'E0001')
+            profile = m.get_profile('E0001', 'ru', EMPLOYEE)
             self.assertLess(time.perf_counter() - profile_start, 2)
             self.assertIn('progress', profile)
             result = await task

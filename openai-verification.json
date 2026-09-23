@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-09-23T10:32:05.995703+00:00",
+  "model": "gpt-4o-mini",
+  "live_provider": "OpenAI",
+  "profiles": [
+    {
+      "profile": "CONTROL_CRITICAL",
+      "passed": true,
+      "elapsed_seconds": 3.786,
+      "events": [
+        "EV_005",
+        "EV_006",
+        "EV_007"
+      ],
+      "checks": {
+        "one_to_three": true,
+        "under_ten_seconds": true,
+        "multiple_factors": true,
+        "eligible_events": true,
+        "critical_skill_first": true
+      }
+    },
+    {
+      "profile": "CONTROL_PREREQUISITES",
+      "passed": true,
+      "elapsed_seconds": 2.39,
+      "events": [
+        "EV_005",
+        "EV_012",
+        "EV_011"
+      ],
+      "checks": {
+        "one_to_three": true,
+        "under_ten_seconds": true,
+        "multiple_factors": true,
+        "eligible_events": true
+      }
+    },
+    {
+      "profile": "CONTROL_REPEAT",
+      "passed": true,
+      "elapsed_seconds": 2.528,
+      "events": [
+        "EV_036"
+      ],
+      "checks": {
+        "one_to_three": true,
+        "under_ten_seconds": true,
+        "multiple_factors": true,
+        "eligible_events": true,
+        "repeat_exception": true
+      }
+    }
+  ],
+  "passed": true
+}

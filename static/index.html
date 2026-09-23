@@ -11,7 +11,22 @@
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <div class="app-shell">
+  <section id="login-view" class="login-view" hidden>
+    <div class="login-card panel">
+      <div class="login-heading"><strong>career<span class="brand-light">quest</span></strong><label><span class="sr-only">Language</span><select id="login-language" aria-label="Language"><option value="ru">RU</option><option value="kk">KK</option><option value="en">EN</option></select></label></div>
+      <h1 data-i18n="login_title">Войдите в свой аккаунт</h1>
+      <p data-i18n="login_hint">Ваш профиль и путь развития — в личном кабинете.</p>
+      <form id="login-form">
+        <label for="login-username" data-i18n="login_username">Логин</label>
+        <input id="login-username" autocomplete="username" required maxlength="100">
+        <label for="login-password" data-i18n="login_password">Пароль</label>
+        <input id="login-password" type="password" autocomplete="current-password" required maxlength="256">
+        <button id="login-submit" type="submit" class="button-primary" data-i18n="login_submit">Войти</button>
+        <p id="login-error" role="alert"></p>
+      </form>
+    </div>
+  </section>
+  <div class="app-shell" id="app-shell" hidden>
     <aside class="sidebar">
       <a class="brand" href="#" aria-label="Career Quest home"><span class="brand-mark"><i></i><i></i><i></i></span><span>career<span class="brand-light">quest</span></span></a>
       <div class="workspace-label" data-i18n="workspace">РАБОЧЕЕ ПРОСТРАНСТВО</div>
