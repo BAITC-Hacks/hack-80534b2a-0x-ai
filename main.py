@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import csv
+import asyncio
 import io
 import json
 import os
 import sqlite3
 import uuid
 from collections import Counter, defaultdict
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -25,10 +26,15 @@ HISTORY_FIELDS = ["record_id", "employee_id", "event_id", "date", "due_date", "s
 STATE: dict[str, Any] = {}
 
 
-def connect() -> sqlite3.Connection:
+@contextmanager
+def connect():
     conn = sqlite3.connect(DB_PATH, timeout=8)
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def load_json(name: str) -> dict[str, Any]:
@@ -36,12 +42,32 @@ def load_json(name: str) -> dict[str, Any]:
 
 
 def init_state() -> None:
+    employees = load_json("employees.json")["employees"]
+    events = load_json("events.json")["events"]
     STATE.update(
-        employees={row["employee_id"]: row for row in load_json("employees.json")["employees"]},
-        events={row["event_id"]: row for row in load_json("events.json")["events"]},
+        employees={},
+        events={row["event_id"]: row for row in events},
         skills=load_json("skills.json"),
-        history=list(csv.DictReader((DATA / "activity_history.csv").open(encoding="utf-8-sig", newline=""))),
+        history=[],
     )
+    history = parse_upload("activity_history.csv", (DATA / "activity_history.csv").read_bytes())
+    skill_ids = {s["skill_id"] for s in STATE["skills"]["skills"]}
+    if len(STATE["events"]) != len(events) or len(skill_ids) != len(STATE["skills"]["skills"]):
+        raise ValueError("Повторные идентификаторы в каталоге мероприятий или навыков")
+    if not as_date(STATE["skills"]["meta"].get("as_of_date")):
+        raise ValueError("Некорректная дата среза")
+    for event in events:
+        refs = set(event.get("prerequisites", {})) | {g["skill_id"] for g in event.get("develops_skills", [])}
+        if not refs <= skill_ids:
+            raise ValueError(f"{event['event_id']}: неизвестные навыки")
+    for profile in STATE["skills"]["role_profiles"]:
+        if not set(profile["required_skills"]) <= skill_ids or not set(profile["critical_skills"]) <= set(profile["required_skills"]):
+            raise ValueError("Некорректные ссылки в требованиях грейда")
+    errors = validate_import(employees, history)
+    if errors:
+        raise ValueError("Ошибки стартового набора: " + "; ".join(errors[:100]))
+    STATE["employees"] = {row["employee_id"]: row for row in employees}
+    STATE["history"] = history
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.execute("CREATE TABLE IF NOT EXISTS uploads (kind TEXT NOT NULL, item_id TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(kind,item_id))")
@@ -82,7 +108,7 @@ def as_date(value: str | None) -> date | None:
     if not value:
         return None
     try:
-        return date.fromisoformat(value[:10])
+        return date.fromisoformat(value) if isinstance(value, str) and len(value) == 10 else None
     except (ValueError, TypeError):
         return None
 
@@ -99,7 +125,8 @@ def current_grade_profile(employee: dict[str, Any], next_grade: bool = False) ->
 
 
 def employee_history(employee_id: str) -> list[dict[str, Any]]:
-    return [row for row in STATE["history"] if row["employee_id"] == employee_id]
+    snapshot = as_date(STATE["skills"]["meta"]["as_of_date"])
+    return [row for row in STATE["history"] if row["employee_id"] == employee_id and as_date(row.get("date")) and as_date(row["date"]) <= snapshot]
 
 
 def progress(employee: dict[str, Any]) -> dict[str, Any]:
@@ -113,14 +140,15 @@ def progress(employee: dict[str, Any]) -> dict[str, Any]:
             continue
         for gain in event.get("develops_skills", []):
             skill_id = gain["skill_id"]
-            levels[skill_id] = min(int(gain["max_level"]), levels.get(skill_id, 0) + int(gain["gain"]))
+            before = levels.get(skill_id, 0)
+            levels[skill_id] = max(before, min(int(gain["max_level"]), before + int(gain["gain"])))
     target = current_grade_profile(employee, next_grade=True)
     current = current_grade_profile(employee)
     requirements = (target or current or {}).get("required_skills", {})
     critical = set((target or current or {}).get("critical_skills", []))
     skill_lookup = {s["skill_id"]: s for s in STATE["skills"]["skills"]}
     gaps = [{"skill_id": key, "name": skill_lookup.get(key, {}).get("name", key), "level": levels.get(key, 0), "required": int(required), "gap": max(0, int(required) - levels.get(key, 0)), "critical": key in critical} for key, required in requirements.items()]
-    return {"levels": levels, "gaps": sorted(gaps, key=lambda x: (not x["critical"], -x["gap"], x["name"])), "target_grade": next((p["grade"] for p in [target] if p), None), "at_top_grade": target is None, "critical_skills": list(critical), "completed_since_review": len(completed)}
+    return {"levels": levels, "gaps": sorted(gaps, key=lambda x: (not x["critical"], -x["gap"], x["name"])), "target_grade": next((p["grade"] for p in [target] if p), None), "at_top_grade": target is None, "critical_skills": list(critical), "completed_since_review": len(completed), "improved_skill_count": sum(level > employee.get("skills", {}).get(sid, 0) for sid, level in levels.items())}
 
 
 def eligible_candidates(employee: dict[str, Any]) -> list[dict[str, Any]]:
@@ -158,7 +186,8 @@ def eligible_candidates(employee: dict[str, Any]) -> list[dict[str, Any]]:
                 weight = 4 if skill in critical else 1
                 amount = min(gap, int(item["gain"]), max(0, int(item["max_level"]) - current_level.get(skill, 0)))
                 impact += amount * weight
-                covered.append(skill)
+                if amount > 0:
+                    covered.append(skill)
         if impact <= 0:
             continue
         counts = by_type[event.get("type", "")]
@@ -183,7 +212,11 @@ def eligible_factor_keys(candidate: dict[str, Any], employee: dict[str, Any]) ->
 def factor_copy(key: str, lang: str, event: dict[str, Any], candidate: dict[str, Any], employee: dict[str, Any]) -> str:
     gaps = progress(employee)["gaps"]
     names = {s["skill_id"]: s["name"] for s in STATE["skills"]["skills"]}
-    covered_names = ", ".join(names.get(s, s) for s in candidate["covered"][:2])
+    covered = candidate["covered"]
+    if key == "critical_gap":
+        critical = set(progress(employee)["critical_skills"])
+        covered = [s for s in covered if s in critical]
+    covered_names = ", ".join(names.get(s, s) for s in covered[:2])
     lines = {
         "ru": {
             "critical_gap": f"Развивает критичный для следующего грейда навык: {covered_names}.",
@@ -241,10 +274,12 @@ def llm_select(employee: dict[str, Any], candidates: list[dict[str, Any]], lang:
     return selected[:3]
 
 
-def recommendations(employee: dict[str, Any], lang: str) -> dict[str, Any]:
+def recommendations(employee: dict[str, Any], lang: str, use_llm: bool = True) -> dict[str, Any]:
     candidates = eligible_candidates(employee)
     source = "ai"
     try:
+        if not use_llm:
+            raise RuntimeError("Rules requested")
         selected = llm_select(employee, candidates, lang)
         if not selected and candidates:
             raise RuntimeError("LLM returned no valid recommendations")
@@ -289,9 +324,17 @@ def get_profile(employee_id: str, lang: str = "ru", x_demo_role: str | None = He
     current = current_grade_profile(employee)
     skills_by_id = {s["skill_id"]: s for s in STATE["skills"]["skills"]}
     state = progress(employee)
-    translated_events = recommendations(employee, lang)
     employee_public = {key: employee.get(key) for key in ["employee_id", "full_name", "department", "role", "grade", "tenure_months", "preferred_language", "career_goal", "last_review_date"]}
-    return {"employee": employee_public, "progress": state, "current_requirements": (current or {}).get("required_skills", {}), "target_requirements": (next_profile or {}).get("required_skills", {}), "skills": [{**skills_by_id.get(g["skill_id"], {"skill_id": g["skill_id"]}), **g} for g in state["gaps"]], "recommendations": translated_events, "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
+    return {"employee": employee_public, "progress": state, "current_requirements": (current or {}).get("required_skills", {}), "target_requirements": (next_profile or {}).get("required_skills", {}), "skills": [{**skills_by_id.get(g["skill_id"], {"skill_id": g["skill_id"]}), **g} for g in state["gaps"]], "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
+
+
+@app.get("/api/recommendations/{employee_id}")
+async def get_recommendations(employee_id: str, lang: str = "ru", x_demo_role: str | None = Header(None), x_employee_id: str | None = Header(None)) -> dict[str, Any]:
+    employee = employee_required(employee_id, x_demo_role, x_employee_id)
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(recommendations, employee, lang), timeout=8.5)
+    except asyncio.TimeoutError:
+        return recommendations(employee, lang, use_llm=False)
 
 
 @app.post("/api/complete")
@@ -302,7 +345,7 @@ def complete_activity(body: CompleteRequest, x_demo_role: str | None = Header(No
         raise HTTPException(status_code=400, detail="Эта активность сейчас недоступна")
     latest_review = as_date(employee.get("last_review_date"))
     snapshot = as_date(STATE["skills"]["meta"]["as_of_date"]) or date.today()
-    activity_day = date.fromordinal(max(snapshot.toordinal(), (latest_review or snapshot).toordinal()) + 1).isoformat()
+    activity_day = snapshot.isoformat()
     record = {"record_id": f"CQ_{uuid.uuid4().hex[:12]}", "employee_id": body.employee_id, "event_id": body.event_id, "date": activity_day, "due_date": "", "status": "completed", "completion_pct": "100", "score": "", "feedback_rating": "", "assigned_by": "self"}
     with connect() as conn:
         conn.execute("INSERT INTO activity_history(record_id,payload) VALUES (?,?)", (record["record_id"], json.dumps(record)))
@@ -315,7 +358,7 @@ def parse_upload(name: str, raw: bytes) -> Any:
         raise ValueError(f"{name}: файл больше 5 МБ")
     if name.endswith(".json"):
         payload = json.loads(raw.decode("utf-8-sig"))
-        if "employees" not in payload or not isinstance(payload["employees"], list):
+        if not isinstance(payload, dict) or "employees" not in payload or not isinstance(payload["employees"], list):
             raise ValueError("employees.json должен содержать массив employees")
         return payload["employees"]
     text = raw.decode("utf-8-sig")
@@ -327,61 +370,108 @@ def parse_upload(name: str, raw: bytes) -> Any:
 
 def validate_import(employees: list[dict[str, Any]], history: list[dict[str, Any]]) -> list[str]:
     errors = []
+    snapshot = as_date(STATE["skills"]["meta"]["as_of_date"])
     employee_ids = set(STATE["employees"])
     event_ids = set(STATE["events"])
-    seen = set()
+    skill_ids = {s["skill_id"] for s in STATE["skills"]["skills"]}
+    role_grades = {(p["role"], p["grade"]) for p in STATE["skills"]["role_profiles"]}
+    accepted = {}
     for i, emp in enumerate(employees, 1):
-        eid = emp.get("employee_id")
-        if not eid or eid in seen or eid in employee_ids:
-            errors.append(f"Профиль {i}: отсутствует или повторяется employee_id {eid!r}")
+        label = f"Профиль {i}"
+        if not isinstance(emp, dict):
+            errors.append(f"{label}: запись должна быть объектом")
             continue
-        seen.add(eid)
+        eid = emp.get("employee_id")
+        if not isinstance(eid, str) or not eid.strip() or eid in employee_ids:
+            errors.append(f"{label}: отсутствует или повторяется employee_id {eid!r}")
+            continue
         employee_ids.add(eid)
-        missing = [key for key in ("role", "grade", "skills") if key not in emp]
-        if missing:
-            errors.append(f"{eid}: отсутствуют поля {', '.join(missing)}")
-        elif not isinstance(emp.get("skills"), dict):
-            errors.append(f"{eid}: skills должен быть объектом")
-        elif not any(p["role"] == emp["role"] and p["grade"] == emp["grade"] for p in STATE["skills"]["role_profiles"]):
+        accepted[eid] = emp
+        for field in ("full_name", "department", "role", "grade"):
+            if not isinstance(emp.get(field), str) or not emp[field].strip():
+                errors.append(f"{eid}: {field} должен быть непустой строкой")
+        role, grade = emp.get("role"), emp.get("grade")
+        if not isinstance(role, str) or not isinstance(grade, str) or (role, grade) not in role_grades:
             errors.append(f"{eid}: неизвестное сочетание роли и грейда")
-        elif any(not isinstance(v, int) or v < 0 or v > 5 for v in emp["skills"].values()):
-            errors.append(f"{eid}: уровень навыка должен быть целым числом от 0 до 5")
-        elif any(k not in {s["skill_id"] for s in STATE["skills"]["skills"]} for k in emp["skills"]):
-            errors.append(f"{eid}: неизвестный skill_id")
+        skills = emp.get("skills")
+        if not isinstance(skills, dict):
+            errors.append(f"{eid}: skills должен быть объектом")
+        else:
+            for sid, level in skills.items():
+                if sid not in skill_ids:
+                    errors.append(f"{eid}: неизвестный skill_id {sid}")
+                if type(level) is not int or not 0 <= level <= 5:
+                    errors.append(f"{eid}/{sid}: уровень должен быть целым числом от 0 до 5")
+        for field in ("last_review_date", "hire_date"):
+            day = as_date(emp.get(field))
+            if day is None or day > snapshot:
+                errors.append(f"{eid}: {field} должен быть датой YYYY-MM-DD не позже даты среза")
+        hired, reviewed = as_date(emp.get("hire_date")), as_date(emp.get("last_review_date"))
+        if hired and reviewed and reviewed < hired:
+            errors.append(f"{eid}: оценка не может быть раньше найма")
+        if type(emp.get("tenure_months")) is not int or emp["tenure_months"] < 0:
+            errors.append(f"{eid}: tenure_months должен быть неотрицательным целым числом")
+        if emp.get("preferred_language") not in ("ru", "kk", "en"):
+            errors.append(f"{eid}: preferred_language должен быть ru, kk или en")
+        if emp.get("work_format") not in ("office", "hybrid", "remote"):
+            errors.append(f"{eid}: неизвестный work_format")
+        goal = emp.get("career_goal")
+        if goal is not None:
+            if (not isinstance(goal, dict) or not isinstance(goal.get("target_role"), str)
+                    or not isinstance(goal.get("target_grade"), str)
+                    or (goal["target_role"], goal["target_grade"]) not in role_grades):
+                errors.append(f"{eid}: некорректная карьерная цель")
+    all_employees = {**STATE["employees"], **accepted}
+    for eid, emp in accepted.items():
+        manager_id = emp.get("manager_id")
+        if manager_id is not None:
+            manager = all_employees.get(manager_id) if isinstance(manager_id, str) else None
+            if not manager or manager_id == eid or manager.get("grade") != "Lead" or manager.get("department") != emp.get("department"):
+                errors.append(f"{eid}: manager_id должен указывать на другого Lead из того же отдела")
     known_records = {row["record_id"] for row in STATE["history"]}
+    status_ranges = {"completed": (100, 100), "in_progress": (0, 95), "dropped": (5, 95), "no_show": (0, 0), "declined": (0, 0), "overdue": (0, 95)}
     for i, row in enumerate(history, 1):
+        if not isinstance(row, dict):
+            errors.append(f"Запись истории {i}: запись должна быть объектом")
+            continue
         rid = row.get("record_id")
-        if not rid or rid in known_records:
-            errors.append(f"Запись истории {i}: отсутствует или уже используется record_id {rid!r}")
-        known_records.add(rid)
-        if row.get("employee_id") not in employee_ids:
-            errors.append(f"{rid}: неизвестный employee_id {row.get('employee_id')}")
-        if row.get("event_id") not in event_ids:
-            errors.append(f"{rid}: неизвестный event_id {row.get('event_id')}")
-        if row.get("status") not in {"completed", "in_progress", "dropped", "no_show", "declined", "overdue"}:
-            errors.append(f"{rid}: неизвестный status")
-        if not as_date(row.get("date")):
-            errors.append(f"{rid}: некорректная дата")
+        label = rid if isinstance(rid, str) and rid else f"Запись истории {i}"
+        if not isinstance(rid, str) or not rid.strip() or rid in known_records:
+            errors.append(f"{label}: отсутствует или уже используется record_id")
+        else:
+            known_records.add(rid)
+        eid, event_id = row.get("employee_id"), row.get("event_id")
+        if not isinstance(eid, str) or eid not in employee_ids:
+            errors.append(f"{label}: неизвестный employee_id {eid!r}")
+        if not isinstance(event_id, str) or event_id not in event_ids:
+            errors.append(f"{label}: неизвестный event_id {event_id!r}")
+        status = row.get("status")
+        if not isinstance(status, str) or status not in status_ranges:
+            errors.append(f"{label}: неизвестный status")
+        day = as_date(row.get("date"))
+        if day is None or day > snapshot:
+            errors.append(f"{label}: date должна быть датой YYYY-MM-DD не позже даты среза")
         for field, maximum in (("completion_pct", 100), ("score", 100), ("feedback_rating", 5)):
             value = row.get(field)
-            if value not in (None, ""):
-                try:
-                    number = int(value)
-                    minimum = 1 if field == "feedback_rating" else 0
-                    if number < minimum or number > maximum:
-                        raise ValueError
-                except (TypeError, ValueError):
-                    errors.append(f"{rid}: {field} должен быть числом от {minimum} до {maximum}")
+            minimum = 1 if field == "feedback_rating" else 0
+            if value in (None, "") and field != "completion_pct":
+                continue
+            try:
+                if isinstance(value, bool) or isinstance(value, float):
+                    raise ValueError
+                number = int(value)
+                if not minimum <= number <= maximum:
+                    raise ValueError
+                if field == "completion_pct" and isinstance(status, str) and status in status_ranges:
+                    low, high = status_ranges[status]
+                    if not low <= number <= high:
+                        errors.append(f"{label}: completion_pct не соответствует status={status}")
+            except (TypeError, ValueError):
+                errors.append(f"{label}: {field} должен быть целым числом от {minimum} до {maximum}")
         if row.get("due_date") and not as_date(row.get("due_date")):
-            errors.append(f"{rid}: некорректный due_date")
-        if row.get("assigned_by") not in {"self", "manager", "hr"}:
-            errors.append(f"{rid}: неизвестный assigned_by")
-    all_employees = dict(STATE["employees"])
-    all_employees.update({row["employee_id"]: row for row in employees if row.get("employee_id")})
-    for emp in employees:
-        manager_id = emp.get("manager_id")
-        if manager_id and (manager_id not in all_employees or all_employees[manager_id].get("grade") != "Lead" or all_employees[manager_id].get("department") != emp.get("department")):
-            errors.append(f"{emp.get('employee_id')}: manager_id должен указывать на Lead из того же отдела")
+            errors.append(f"{label}: некорректный due_date")
+        if row.get("assigned_by") not in ("self", "manager", "hr"):
+            errors.append(f"{label}: неизвестный assigned_by")
     return errors
 
 
@@ -391,10 +481,10 @@ async def import_data(employees_file: UploadFile | None = File(None), history_fi
     if not employees_file and not history_file:
         raise HTTPException(status_code=400, detail="Загрузите employees.json и/или activity_history.csv")
     try:
-        employees = parse_upload(employees_file.filename or "employees.json", await employees_file.read()) if employees_file else []
-        history = parse_upload(history_file.filename or "activity_history.csv", await history_file.read()) if history_file else []
+        employees = parse_upload("employees.json", await employees_file.read()) if employees_file else []
+        history = parse_upload("activity_history.csv", await history_file.read()) if history_file else []
     except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail={"errors": [str(exc)], "total_errors": 1}) from exc
     errors = validate_import(employees, history)
     if errors:
         raise HTTPException(status_code=422, detail={"errors": errors[:100], "total_errors": len(errors)})
@@ -440,9 +530,9 @@ def hr_summary(x_demo_role: str | None = Header(None)) -> dict[str, Any]:
     for (role, grade), skill_data in grouped_gaps.items():
         rows = [{"skill_id": key, "name": skill_map.get(key, {}).get("name", key), **value} for key, value in skill_data.items()]
         rows.sort(key=lambda row: (-row["critical_count"], -row["total_gap"], row["name"]))
-        by_segment.append({"role": role, "grade": grade, "competency_gaps": rows[:20]})
+        by_segment.append({"role": role, "grade": grade, "competency_gaps": rows})
     by_segment.sort(key=lambda item: (item["role"], GRADE_ORDER.index(item["grade"])))
-    return {"competency_gaps": weak[:20], "role_grade_gaps": by_segment, "roles": sorted({e["role"] for e in STATE["employees"].values()}), "grades": GRADE_ORDER, "employees_at_risk": sorted(slipping, key=lambda r: (-r["recent_opt_outs"], r["name"])), "employee_count": len(STATE["employees"]), "history_count": len(STATE["history"])}
+    return {"competency_gaps": weak, "role_grade_gaps": by_segment, "roles": sorted({e["role"] for e in STATE["employees"].values()}), "grades": GRADE_ORDER, "employees_at_risk": sorted(slipping, key=lambda r: (-r["recent_opt_outs"], r["name"] or "")), "employee_count": len(STATE["employees"]), "history_count": len(STATE["history"])}
 
 
 app.mount("/", StaticFiles(directory=ROOT / "static", html=True), name="web")

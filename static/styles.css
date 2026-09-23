@@ -52,3 +52,10 @@ body{color:#17251f;background:#f5f8f6;font-family:'DM Sans',Arial,sans-serif}
 .file-button:hover{border-color:#8ac79d}
 .spinner{border-color:#dcefe2;border-top-color:#07843f}
 @media(max-width:760px){.sidebar{background:#fff}}
+
+.skill-description{min-width:0;white-space:normal;line-height:1.5}
+.skill-description summary{cursor:pointer;overflow-wrap:anywhere}
+.skill-description p{font-size:11px;color:var(--muted);margin:8px 0}
+.skill-label{overflow:visible;white-space:normal}
+.recommendation-status{grid-column:1/-1;padding:24px;background:white;border:1px solid var(--line);border-radius:16px;color:var(--muted)}
+.recommendation-status button{margin-left:12px}

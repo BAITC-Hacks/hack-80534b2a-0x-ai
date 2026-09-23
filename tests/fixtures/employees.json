@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "as_of_date": "2026-10-01",
+    "purpose": "Synthetic acceptance profiles; not official jury profiles"
+  },
+  "employees": [
+    {
+      "employee_id": "CONTROL_CRITICAL",
+      "full_name": "Control Critical",
+      "department": "Backend Development",
+      "role": "Backend Engineer",
+      "grade": "Middle",
+      "manager_id": null,
+      "hire_date": "2023-04-25",
+      "tenure_months": 41,
+      "work_format": "remote",
+      "preferred_language": "kk",
+      "career_goal": {
+        "target_role": "Backend Engineer",
+        "target_grade": "Senior"
+      },
+      "skills": {
+        "SK_PYTHON": 4,
+        "SK_SQL": 4,
+        "SK_API_DESIGN": 4,
+        "SK_SYSTEM_DESIGN": 2,
+        "SK_CLOUD": 3,
+        "SK_CONTAINERS": 3,
+        "SK_CICD": 3,
+        "SK_APP_SECURITY": 3,
+        "SK_OBSERVABILITY": 3,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 3,
+        "SK_LEADERSHIP": 2,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_PUBLIC_SPEAKING": 0
+      },
+      "last_review_date": "2026-09-01"
+    },
+    {
+      "employee_id": "CONTROL_PREREQUISITES",
+      "full_name": "Control Prerequisites",
+      "department": "Backend Development",
+      "role": "Backend Engineer",
+      "grade": "Junior",
+      "manager_id": null,
+      "hire_date": "2023-04-25",
+      "tenure_months": 41,
+      "work_format": "remote",
+      "preferred_language": "ru",
+      "career_goal": {
+        "target_role": "Backend Engineer",
+        "target_grade": "Middle"
+      },
+      "skills": {
+        "SK_PYTHON": 1
+      },
+      "last_review_date": "2026-09-01"
+    },
+    {
+      "employee_id": "CONTROL_REPEAT",
+      "full_name": "Control Repeat",
+      "department": "Backend Development",
+      "role": "Backend Engineer",
+      "grade": "Middle",
+      "manager_id": null,
+      "hire_date": "2023-04-25",
+      "tenure_months": 41,
+      "work_format": "remote",
+      "preferred_language": "en",
+      "career_goal": {
+        "target_role": "Backend Engineer",
+        "target_grade": "Senior"
+      },
+      "skills": {
+        "SK_PYTHON": 4,
+        "SK_SQL": 4,
+        "SK_API_DESIGN": 4,
+        "SK_SYSTEM_DESIGN": 4,
+        "SK_CLOUD": 3,
+        "SK_CONTAINERS": 3,
+        "SK_CICD": 3,
+        "SK_APP_SECURITY": 3,
+        "SK_OBSERVABILITY": 3,
+        "SK_COMMUNICATION": 3,
+        "SK_TEAMWORK": 3,
+        "SK_PROBLEM_SOLVING": 4,
+        "SK_MENTORING": 3,
+        "SK_LEADERSHIP": 2,
+        "SK_STAKEHOLDER_MGMT": 2,
+        "SK_PUBLIC_SPEAKING": 0
+      },
+      "last_review_date": "2026-09-01"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+record_id,employee_id,event_id,date,due_date,status,completion_pct,score,feedback_rating,assigned_by
+CONTROL_HISTORY_1,CONTROL_CRITICAL,EV_036,2026-06-10,,no_show,0,,,self
+CONTROL_HISTORY_2,CONTROL_CRITICAL,EV_036,2026-07-10,,no_show,0,,,self
+CONTROL_HISTORY_3,CONTROL_CRITICAL,EV_036,2026-08-10,,no_show,0,,,self
+CONTROL_HISTORY_4,CONTROL_REPEAT,EV_036,2026-08-10,,completed,100,,,self
