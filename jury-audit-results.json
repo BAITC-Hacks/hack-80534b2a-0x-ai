@@ -1,0 +1,148 @@
+{
+  "import": {
+    "status": 200,
+    "result": {
+      "ok": true,
+      "employees_imported": 3,
+      "history_imported": 4,
+      "imported_employee_ids": [
+        "CONTROL_CRITICAL",
+        "CONTROL_PREREQUISITES",
+        "CONTROL_REPEAT"
+      ]
+    },
+    "elapsed_ms": 23
+  },
+  "profiles": [
+    {
+      "id": "CONTROL_CRITICAL",
+      "profile_ms": 11,
+      "recommendations_ms": 16,
+      "source": "rules_fallback",
+      "events": [
+        "EV_005",
+        "EV_006",
+        "EV_007"
+      ]
+    },
+    {
+      "id": "CONTROL_PREREQUISITES",
+      "profile_ms": 11,
+      "recommendations_ms": 16,
+      "source": "rules_fallback",
+      "events": [
+        "EV_005",
+        "EV_012",
+        "EV_040"
+      ]
+    },
+    {
+      "id": "CONTROL_REPEAT",
+      "profile_ms": 12,
+      "recommendations_ms": 13,
+      "source": "rules_fallback",
+      "events": [
+        "EV_036"
+      ]
+    }
+  ],
+  "hr": {
+    "status": 200,
+    "elapsed_ms": 215,
+    "fields": [
+      "competency_gaps",
+      "role_grade_gaps",
+      "roles",
+      "grades",
+      "employees_at_risk",
+      "employee_count",
+      "history_count",
+      "employee_segments",
+      "employees_without_next_step",
+      "activity_participation",
+      "as_of_date"
+    ]
+  },
+  "privacy": {
+    "/api/hr": 403,
+    "/api/profile/E0002": 403,
+    "/api/settings/openai": 403
+  },
+  "completion": {
+    "event": "EV_005",
+    "changes": [
+      {
+        "skill_id": "SK_API_DESIGN",
+        "name": "API Design",
+        "before": 2,
+        "after": 3
+      },
+      {
+        "skill_id": "SK_SYSTEM_DESIGN",
+        "name": "System Design",
+        "before": 1,
+        "after": 2
+      }
+    ],
+    "xp_before": 300,
+    "xp_after": 400,
+    "elapsed_ms": 20
+  },
+  "redemption": {
+    "status": 200,
+    "balance": 100,
+    "codes": 1,
+    "demo_prefix": true
+  },
+  "restart": {
+    "employee": {
+      "profile": "E0001",
+      "completed": 8,
+      "api_design": 3,
+      "balance": 100,
+      "codes": 1
+    },
+    "control_account": {
+      "profile": "CONTROL_CRITICAL",
+      "completed": 0,
+      "api_design": 4,
+      "balance": 0,
+      "codes": 0
+    }
+  },
+  "timestamp": "2026-09-23T12:30:21.306305+00:00",
+  "environment": "Windows, Python 3.12, fresh copied tracked files, fresh venv, fresh SQLite, localhost:8773",
+  "startup": {
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\run.ps1 -Port 8773",
+    "passed": true,
+    "interactive_accounts_created": true,
+    "pip_check": "No broken requirements found",
+    "restart_command": ".\\.venv\\Scripts\\python.exe scripts\\start.py --port 8773"
+  },
+  "tests": {
+    "working_environment": {
+      "passed": 95,
+      "seconds": 18.782
+    },
+    "clean_environment": {
+      "passed": 95,
+      "seconds": 18.473
+    },
+    "javascript_harness": "PASS",
+    "javascript_syntax": "PASS"
+  },
+  "browser": {
+    "login_employee": true,
+    "preferred_language_kk": true,
+    "switch_ru_en": true,
+    "persisted_completion_and_reward_visible": true,
+    "hr_employee_count_after_import": 203,
+    "javascript_errors_observed": 0
+  },
+  "limits": [
+    "HTTP timings are not full UI timings",
+    "Not a load test",
+    "Synthetic control profiles are not official jury profiles",
+    "No full Git history secret audit"
+  ]
+}
