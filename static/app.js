@@ -89,6 +89,9 @@ Object.assign(UI.en,{history_date:'Date in history',history_date_hint:'For self-
 Object.assign(UI.ru,{history_counted:'После оценки',history_counting:'Относительно оценки'});
 Object.assign(UI.kk,{history_counted:'Бағалаудан кейін',history_counting:'Бағалауға қатысты'});
 Object.assign(UI.en,{history_counted:'After review',history_counting:'Relative to review'});
+Object.assign(UI.ru,{repeated_opt_out:'сотрудники с повторными пропусками, отказами или незавершениями',reason_details:'Все основания и расчёт',brief_reason:'Почему подходит',hr_scope:'Показатели для выбранной роли и грейда',preview_nav:'Профиль сотрудника'});
+Object.assign(UI.kk,{repeated_opt_out:'қайта қатыспаған, бас тартқан немесе аяқтамаған қызметкерлер',reason_details:'Барлық негіздер мен есеп',brief_reason:'Неліктен сәйкес келеді',hr_scope:'Таңдалған рөл мен грейд көрсеткіштері',preview_nav:'Қызметкер профилі'});
+Object.assign(UI.en,{repeated_opt_out:'people with repeated no-shows, declines or dropouts',reason_details:'All reasons and calculation',brief_reason:'Why it fits',hr_scope:'Metrics for the selected role and grade',preview_nav:'Employee profile'});
 const state={lang:localStorage.getItem('cq-lang')||'ru',role:null,auth:null,profile:null,hr:null,demo:null};
 const $=id=>document.getElementById(id);const t=key=>(UI[state.lang]||UI.en)[key]||UI.en[key]||key;
 function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -115,7 +118,7 @@ async function fetchJson(path,options){
 }
 function showLogin(){
  ++requestVersion;recommendationController?.abort();
- state.recommendationError=null;state.auth=null;state.role=null;state.profile=null;state.hr=null;state.demo=null;state.completion=null;state.aiSettings=null;state.importedEmployeeIds=[];$('imported-profiles').replaceChildren();$('api-key-input').value='';$('api-key-result').textContent='';
+ state.rewards=null;resetRewardUI();$('rewards-panel').replaceChildren();$('rewards-panel').hidden=true;state.recommendationError=null;state.auth=null;state.role=null;state.profile=null;state.hr=null;state.demo=null;state.completion=null;state.aiSettings=null;state.importedEmployeeIds=[];$('imported-profiles').replaceChildren();$('api-key-input').value='';$('api-key-result').textContent='';
  $('app-shell').hidden=true;$('login-view').hidden=false;$('loading-state').hidden=true;
  for(const id of ['skills-list','recommendations-list','hr-gaps-table','hr-risk-list','completed-activities','hr-without-step','hr-participation-table'])$(id).replaceChildren();
  $('profile-name').textContent='—';$('sidebar-name').textContent='—';
@@ -144,9 +147,9 @@ async function reload(){
   state.hr=result;state.aiSettings=aiSettings;state.profile=null;render();return;
  }
  const id=state.demo.employee_id;
- const profile=await fetchJson('/api/profile/'+encodeURIComponent(id));
+ const [profile,wallet]=await Promise.all([fetchJson('/api/profile/'+encodeURIComponent(id)),state.auth.role==='employee'?fetchJson('/api/rewards'):Promise.resolve(null)]);
  if(version!==requestVersion)return;
- state.profile=profile;state.hr=null;
+ state.profile=profile;state.hr=null;state.rewards=wallet;
  const preferred=localStorage.getItem('cq-lang-'+id)||profile.employee.preferred_language||'ru';
  state.recommendationStatus='loading';setLanguage(preferred,false);
  recommendationController=new AbortController();
@@ -166,7 +169,11 @@ function showView(){
  $('nav-growth').classList.toggle('active',!isHr);$('nav-hr').classList.toggle('active',isHr);
  $('breadcrumb-page').textContent=t(isHr?'hr_dashboard':canHr?'hr_preview':'my_growth');
  $('role-label').textContent=t('logout');
- if(isHr){$('sidebar-name').textContent=state.auth.username;$('sidebar-role').textContent='HR';$('user-avatar').textContent=initials(state.auth.username);}
+ for(const [id,key] of [['nav-growth',canHr?'preview_nav':'my_growth'],['nav-hr','hr_dashboard'],['role-button','logout']]){
+  $(id).setAttribute('aria-label',t(key));$(id).title=t(key);
+ }
+ $('nav-growth').querySelector('[data-i18n]').textContent=t(canHr?'preview_nav':'my_growth');
+ if(canHr){$('sidebar-name').textContent=state.auth.username;$('sidebar-role').textContent='HR';$('user-avatar').textContent=initials(state.auth.username);}
 }
 function render(){
  document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t(el.dataset.i18n));
@@ -181,12 +188,19 @@ function effectPreview(item){
  if(!effects.length)return '';
  return `<section class="effect-preview"><strong>${escapeHtml(t('effect_preview'))}</strong><ul>${effects.map(effect=>`<li><span>${escapeHtml(localSkill(effect))}${effect.critical?` <span class="effect-critical">${escapeHtml(t('critical_skill'))}</span>`:''}${effect.scope==='career_goal'?` <small>${escapeHtml(t('goal_skill'))}</small>`:''}</span><b>${escapeHtml(effect.current)} → ${escapeHtml(effect.after_completion)} (+${escapeHtml(effect.effective_gain)})</b><small>${escapeHtml(t('required_level'))}: ${escapeHtml(effect.required)}</small></li>`).join('')}</ul><p>${escapeHtml(t('effect_hint'))}</p></section>`;
 }
+function reasonPreview(item){
+ const effects=item.evidence?.skill_effects||[];
+ const keyEffect=effects.find(effect=>effect.critical)||effects[0];
+ const summary=keyEffect?`${localSkill(keyEffect)}: ${keyEffect.current} → ${keyEffect.after_completion} (+${keyEffect.effective_gain}) · ${t('required_level')}: ${keyEffect.required}${keyEffect.critical?' · '+t('critical_skill'):''}`:localReason(item.reasons?.[0]||'');
+ return `<p class="reason-preview"><strong>${escapeHtml(t('brief_reason'))}</strong>${escapeHtml(summary)}</p>`;
+}
 function sessionPreview(item){
  if(item.format==='self_paced')return t('available_anytime');
  const day=(item.upcoming_sessions||[]).filter(day=>typeof day==='string'&&day>=item.evidence?.as_of_date).sort()[0];
  return day?`${t('next_session')}: ${day}`:t('session_unavailable');
 }
 function renderProfile(){const p=state.profile,e=p.employee,progress=p.progress;
+ renderRewards();
  renderCompletedActivities();
  const blocked=completionBlocked();
  const notice=$('completion-blocked');notice.hidden=!blocked;notice.textContent=t('completion_blocked');
@@ -194,10 +208,10 @@ function renderProfile(){const p=state.profile,e=p.employee,progress=p.progress;
  $('requirements-label').textContent=t(progress.at_top_grade?'current_requirements':'requirements_met');
  const summary=$('completion-summary');const completion=state.completion;
  summary.hidden=!completion||completion.employeeId!==e.employee_id;
- if(!summary.hidden)summary.innerHTML=`<strong>${escapeHtml(t(completion.changes.length?'completion_saved':'completion_no_gain'))}</strong>${completion.changes.map(change=>`<div>${escapeHtml(localSkill(change))}: <b>${change.before} → ${change.after}</b></div>`).join('')}`;
+ if(!summary.hidden)summary.innerHTML=`<strong>${escapeHtml(t(completion.changes.length?'completion_saved':'completion_no_gain'))}</strong>${completion.xp?`<div>+${completion.xp} Quest XP</div>`:''}${completion.changes.map(change=>`<div>${escapeHtml(localSkill(change))}: <b>${change.before} → ${change.after}</b></div>`).join('')}`;
 const name=e.full_name||e.employee_id;$('employee-name').textContent=name.split(' ')[0];$('profile-name').textContent=name;$('profile-title').textContent=localRole(e.role)+' · '+e.grade;$('department-name').textContent=e.department;$('last-review').textContent=e.last_review_date||t('no_date');$('tenure-label').textContent=(e.tenure_months>=12?`${Math.floor(e.tenure_months/12)} ${t('years')}`:`${e.tenure_months} ${t('months')}`);$('profile-avatar').textContent=initials(name);$('user-avatar').textContent=initials(name);$('sidebar-name').textContent=name;$('sidebar-role').textContent=localRole(e.role);$('snapshot-date').textContent=p.as_of_date;$('current-grade').textContent=e.grade;$('target-grade').textContent=progress.target_grade||(progress.at_top_grade?e.grade:t('no_target'));const gaps=progress.gaps||[];const met=gaps.filter(g=>g.gap===0).length;const percent=gaps.length?Math.round(met/gaps.length*100):100;$('progress-percent').textContent=percent+'%';$('met-skills').textContent=`${met} ${t('of')} ${gaps.length}`;$('progress-fill').style.width=percent+'%';const critical=gaps.filter(g=>g.critical&&g.gap>0).slice(0,2);$('critical-copy').textContent=critical.length?`${t('critical_skill')}: ${critical.map(g=>localSkill(g)).join(', ')}`:t('no_gaps');$('skills-count').textContent=progress.improved_skill_count||0;$('activities-count').textContent=progress.completed_since_review||0;
  const rows=[...p.skills].sort((a,b)=>(b.critical-a.critical)||b.gap-a.gap);const skillRows=rows.map((g,index)=>{const level=Number(g.level)||0,required=Number(g.required)||0;const pct=Math.min(100,level/5*100);return `<div class="skill-row" style="order:${index}"><div class="skill-label ${g.critical?'critical':''}">${g.critical?`<span class="critical-marker"><button type="button" class="critical-trigger" aria-label="${escapeHtml(t('critical_skill'))}" aria-describedby="critical-tip-${escapeHtml(g.skill_id)}"><span class="skill-dot" aria-hidden="true"></span></button><span class="critical-tooltip" role="tooltip" id="critical-tip-${escapeHtml(g.skill_id)}">${escapeHtml(t('critical_tooltip'))}</span></span>`:''}<details class="skill-description"><summary>${escapeHtml(localSkill(g))}</summary><p>${escapeHtml(state.lang==='en'?g.description:SKILL_DESCRIPTIONS[g.skill_id]?.[state.lang==='ru'?0:1]||g.description)}</p></details></div><div class="skill-meter"><span class="${g.gap===0?'complete':''}" style="width:${pct}%"></span></div><div class="skill-number"><strong>${level}</strong>/${required} ${t('skill_level')}</div></div>`});$('skills-list').innerHTML=[0,1].map(column=>`<div class="skills-column">${skillRows.filter((_,index)=>index%2===column).join('')}</div>`).join('');
- const rec=p.recommendations?.recommendations||[];$('recommendations-list').innerHTML=rec.map((item,i)=>{const copy=localEvent(item);const done=employeeHasCompleted(item.event_id);return `<article class="rec-card"><div class="rec-card-top"><span class="rec-type">${escapeHtml(localizedType(item.type))}</span><span class="rec-number">0${i+1}</span></div><h3 class="rec-title">${escapeHtml(copy.title)}</h3><p class="rec-desc">${escapeHtml(copy.description)}</p><div class="reason-list">${item.reasons.map(reason=>`<div class="reason">${escapeHtml(localReason(reason))}</div>`).join('')}</div>${effectPreview(item)}<p class="session-preview">${escapeHtml(sessionPreview(item))}</p><div class="rec-meta"><span>${escapeHtml(t(item.format==='self_paced'?'self_paced':item.format==='offline'?'offline':'online'))}</span><span class="duration">◷ ${escapeHtml(item.duration_hours)} ${t('hours')}</span></div><button class="rec-button ${done?'done':''}" data-complete="${escapeHtml(item.event_id)}" ${done||blocked||state.auth.role==='hr'?'disabled':''}>${state.auth.role==='hr'?t('hr_preview'):done?t('completed'):blocked?t('completion_unavailable'):t('complete')}</button></article>`}).join('');$('empty-recommendations').hidden=rec.length>0;$('recommendations-list').hidden=!rec.length;const ai=p.recommendations?.source==='ai';document.querySelector('.ai-badge span:last-child').textContent=t(ai?'ai_active':'fallback_ai');document.querySelector('.ai-badge').classList.toggle('fallback',!ai);
+ const rec=p.recommendations?.recommendations||[];$('recommendations-list').innerHTML=rec.map((item,i)=>{const copy=localEvent(item);const done=employeeHasCompleted(item.event_id);return `<article class="rec-card"><div class="rec-card-top"><span class="rec-type">${escapeHtml(localizedType(item.type))}</span><span class="rec-number">0${i+1}</span></div><h3 class="rec-title">${escapeHtml(copy.title)}</h3><p class="rec-desc">${escapeHtml(copy.description)}</p>${reasonPreview(item)}<details class="recommendation-details"><summary>${escapeHtml(t('reason_details'))}</summary><div class="reason-list">${item.reasons.map(reason=>`<div class="reason">${escapeHtml(localReason(reason))}</div>`).join('')}</div>${effectPreview(item)}</details><p class="session-preview">${escapeHtml(sessionPreview(item))}</p><div class="rec-meta"><span>${escapeHtml(t(item.format==='self_paced'?'self_paced':item.format==='offline'?'offline':'online'))}</span><span class="duration">◷ ${escapeHtml(item.duration_hours)} ${t('hours')}</span></div><button class="rec-button ${done?'done':''}" data-complete="${escapeHtml(item.event_id)}" ${done||blocked||state.auth.role==='hr'?'disabled':''}>${state.auth.role==='hr'?t('hr_preview'):done?t('completed'):blocked?t('completion_unavailable'):t('complete')}</button></article>`}).join('');$('empty-recommendations').hidden=rec.length>0;$('recommendations-list').hidden=!rec.length;const ai=p.recommendations?.source==='ai';document.querySelector('.ai-badge span:last-child').textContent=t(ai?'ai_active':'fallback_ai');document.querySelector('.ai-badge').classList.toggle('fallback',!ai);
  if(state.recommendationStatus!=='ready'){
   $('empty-recommendations').hidden=true;$('recommendations-list').hidden=false;
   const message=state.recommendationStatus==='error'?t(state.recommendationError||'recommendations_error'):t('recommendations_loading');
@@ -242,12 +256,14 @@ function renderHr(){
  if(gradeSelect.options.length!==data.grades.length+1||gradeSelect.dataset.lang!==state.lang){const selected=gradeSelect.value;gradeSelect.innerHTML=`<option value="">${state.lang==='ru'?'Все грейды':state.lang==='kk'?'Барлық грейд':'All grades'}</option>`+data.grades.map(grade=>`<option value="${escapeHtml(grade)}">${escapeHtml(grade)}</option>`).join('');gradeSelect.value=selected;gradeSelect.dataset.lang=state.lang}
  const role=roleSelect.value,grade=gradeSelect.value;renderHrDetails(data,role,grade);$('snapshot-date').textContent=data.as_of_date||'—';const riskRows=data.employees_at_risk.filter(row=>(!role||row.role===role)&&(!grade||row.grade===grade));$('hr-risk-count').textContent=riskRows.length;let rows=data.competency_gaps;
  if(role||grade){const groups=data.role_grade_gaps.filter(group=>(!role||group.role===role)&&(!grade||group.grade===grade));const merged=new Map();for(const group of groups)for(const item of group.competency_gaps){const row=merged.get(item.skill_id)||{...item,employees:0,total_gap:0,critical_count:0};row.employees+=item.employees;row.total_gap+=item.total_gap;row.critical_count+=item.critical_count;merged.set(item.skill_id,row)}rows=[...merged.values()].sort((a,b)=>b.critical_count-a.critical_count||b.total_gap-a.total_gap||a.name.localeCompare(b.name));}
+ $('hr-gap-count').textContent=rows.length;
+ $('hr-employee-count').textContent=(role||grade)?(data.employee_segments||[]).filter(row=>(!role||row.role===role)&&(!grade||row.grade===grade)).reduce((sum,row)=>sum+row.employee_count,0):data.employee_count;
  $('hr-gaps-table').innerHTML=rows.map(row=>`<tr><td>${escapeHtml(localSkill(row))}</td><td>${row.employees}</td><td>${row.total_gap}</td><td><span class="critical-pill">${row.critical_count}</span></td></tr>`).join('')||`<tr><td colspan="4">${t('not_enough_data')}</td></tr>`;
  $('hr-risk-list').innerHTML=riskRows.map(row=>`<div class="risk-row"><span class="risk-avatar">${initials(row.name)}</span><div class="risk-name"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(localRole(row.role))} · ${escapeHtml(row.grade)} · ${escapeHtml(row.latest_date)}</span></div><span class="risk-count">${row.recent_opt_outs} ${t('risk_events')}</span></div>`).join('');$('empty-risk').hidden=riskRows.length>0;
 }
 for(const filter of ['hr-role-filter','hr-grade-filter'])$(filter).addEventListener('change',renderHr);
 function localizedType(type){const maps={ru:{compliance:'Обязательное обучение',course:'Курс',workshop:'Практикум',mentoring:'Менторство',certification:'Сертификация',meetup:'Встреча',onboarding:'Адаптация'},kk:{compliance:'Міндетті оқыту',course:'Курс',workshop:'Практикум',mentoring:'Тәлімгерлік',certification:'Сертификат',meetup:'Кездесу',onboarding:'Бейімделу'},en:{compliance:'Compliance training',course:'Course',workshop:'Workshop',mentoring:'Mentoring',certification:'Certification',meetup:'Meetup',onboarding:'Onboarding'}};return maps[state.lang]?.[type]||type;}
-document.addEventListener('click',async event=>{const preview=event.target.closest('[data-preview-employee]');if(preview){await previewProfile(preview.dataset.previewEmployee);return;}if(event.target.closest('#retry-recommendations')){await reload();return;}const button=event.target.closest('[data-complete]');if(button){if(completionBlocked()||state.auth?.role!=='employee')return;button.disabled=true;try{const result=await fetchJson('/api/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:state.demo.employee_id,event_id:button.dataset.complete})});state.completion={employeeId:state.demo.employee_id,changes:result.changes};await reload();}catch(error){button.disabled=false;alert(error.message)}}});
+document.addEventListener('click',async event=>{const preview=event.target.closest('[data-preview-employee]');if(preview){await previewProfile(preview.dataset.previewEmployee);return;}if(event.target.closest('#retry-recommendations')){await reload();return;}const button=event.target.closest('[data-complete]');if(button){if(completionBlocked()||state.auth?.role!=='employee')return;button.disabled=true;try{const result=await fetchJson('/api/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_id:state.demo.employee_id,event_id:button.dataset.complete})});state.completion={employeeId:state.demo.employee_id,changes:result.changes,xp:result.xp_awarded||0};await reload();}catch(error){button.disabled=false;alert(error.message)}}});
 $('language-select').addEventListener('change',async e=>{setLanguage(e.target.value);try{await reload()}catch(error){showError(error)}});
 $('role-button').addEventListener('click',async()=>{
  try{await fetchJson('/api/auth/logout',{method:'POST'});showLogin();}

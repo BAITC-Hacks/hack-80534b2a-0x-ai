@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, SecretStr
 import auth
+import rewards
 from auth import Principal, require_session
 from request_guard import RequestBodyLimitMiddleware
 from recommendation_runtime import RecommendationRuntime
@@ -88,6 +89,7 @@ def init_state() -> None:
     STATE["history"] = history
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
+        rewards.init(conn)
         conn.execute("CREATE TABLE IF NOT EXISTS uploads (kind TEXT NOT NULL, item_id TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(kind,item_id))")
         conn.execute("CREATE TABLE IF NOT EXISTS activity_history (record_id TEXT PRIMARY KEY, payload TEXT NOT NULL)")
         for row in conn.execute("SELECT item_id,payload FROM uploads WHERE kind='employee'"):
@@ -419,6 +421,57 @@ class CompleteRequest(BaseModel):
     event_id: str
 
 
+class RewardRequest(BaseModel):
+    reward_id: str = Field(min_length=1, max_length=40)
+
+
+class RedeemRequest(RewardRequest):
+    request_id: uuid.UUID
+
+
+def reward_employee(principal):
+    role_required('employee', principal)
+    employee_required(principal.employee_id, principal)
+    return principal.employee_id
+
+
+def sync_rewards(conn, employee_id):
+    rewards.sync(conn, employee_id, STATE['history'], STATE['events'], STATE['skills']['meta']['as_of_date'])
+
+
+@app.get('/api/rewards')
+@serialized_mutation
+def get_rewards(principal: Principal = Depends(require_session)):
+    employee_id = reward_employee(principal)
+    with connect() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        sync_rewards(conn, employee_id)
+        return rewards.wallet(conn, employee_id)
+
+
+@app.post('/api/rewards/goal')
+@serialized_mutation
+def set_reward_goal(body: RewardRequest, principal: Principal = Depends(require_session)):
+    employee_id = reward_employee(principal)
+    rewards.reward(body.reward_id)
+    with connect() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        sync_rewards(conn, employee_id)
+        conn.execute('INSERT INTO quest_goals VALUES(?,?) ON CONFLICT(employee_id) DO UPDATE SET reward_id=excluded.reward_id', (employee_id, body.reward_id))
+        return rewards.wallet(conn, employee_id)
+
+
+@app.post('/api/rewards/redeem')
+@serialized_mutation
+def redeem_reward(body: RedeemRequest, principal: Principal = Depends(require_session)):
+    employee_id = reward_employee(principal)
+    with connect() as conn:
+        conn.execute('BEGIN IMMEDIATE')
+        sync_rewards(conn, employee_id)
+        rewards.redeem(conn, employee_id, body.reward_id, str(body.request_id), STATE['skills']['meta']['as_of_date'])
+        return rewards.wallet(conn, employee_id)
+
+
 class OpenAIKeyRequest(BaseModel):
     api_key: SecretStr
 
@@ -515,13 +568,17 @@ def complete_activity(body: CompleteRequest, principal: Principal = Depends(requ
     record = {"record_id": f"CQ_{uuid.uuid4().hex[:12]}", "employee_id": body.employee_id, "event_id": body.event_id, "date": activity_day, "due_date": "", "status": "completed", "completion_pct": "100", "score": "", "feedback_rating": "", "assigned_by": "self"}
     with connect() as conn:
         conn.execute("INSERT INTO activity_history(record_id,payload) VALUES (?,?)", (record["record_id"], json.dumps(record)))
+        sync_rewards(conn, body.employee_id)
+        earned_before, _ = rewards.balance(conn, body.employee_id)
+        rewards.sync(conn, body.employee_id, [record], STATE['events'], activity_day)
+        earned_after, _ = rewards.balance(conn, body.employee_id)
     STATE["history"].append(record)
     RECOMMENDATION_RUNTIME.invalidate()
     after = progress(employee)
     names = {s["skill_id"]: s["name"] for s in STATE["skills"]["skills"]}
     changes = [{"skill_id": sid, "name": names[sid], "before": before["levels"][sid], "after": value}
                for sid, value in after["levels"].items() if value != before["levels"][sid]]
-    return {"ok": True, "progress": after, "changes": changes, "recorded_date": activity_day}
+    return {"ok": True, "progress": after, "changes": changes, "recorded_date": activity_day, "xp_awarded": earned_after-earned_before}
 
 
 def parse_upload(name: str, raw: bytes) -> Any:
@@ -728,8 +785,10 @@ def hr_summary(principal: Principal = Depends(require_session)) -> dict[str, Any
     gaps = defaultdict(lambda: {"employees": 0, "total_gap": 0, "critical_count": 0})
     grouped_gaps = defaultdict(lambda: defaultdict(lambda: {"employees": 0, "total_gap": 0, "critical_count": 0}))
     slipping = []
+    segment_counts = defaultdict(int)
     without_step = []
     for employee in STATE["employees"].values():
+        segment_counts[(employee["role"], employee["grade"])] += 1
         profile = progress(employee)
         for gap in profile["gaps"]:
             if gap["gap"]:
@@ -758,6 +817,7 @@ def hr_summary(principal: Principal = Depends(require_session)) -> dict[str, Any
         by_segment.append({"role": role, "grade": grade, "competency_gaps": rows})
     by_segment.sort(key=lambda item: (item["role"], GRADE_ORDER.index(item["grade"])))
     return {"competency_gaps": weak, "role_grade_gaps": by_segment, "roles": sorted({e["role"] for e in STATE["employees"].values()}), "grades": GRADE_ORDER, "employees_at_risk": sorted(slipping, key=lambda r: (-r["recent_opt_outs"], r["name"] or "")), "employee_count": len(STATE["employees"]), "history_count": len(STATE["history"]),
+            "employee_segments": [{"role": role, "grade": grade, "employee_count": count} for (role, grade), count in sorted(segment_counts.items())],
             "employees_without_next_step": sorted(without_step, key=lambda r: (r["name"] or "", r["employee_id"])),
             "activity_participation": activity_participation(), "as_of_date": STATE["skills"]["meta"]["as_of_date"]}
 

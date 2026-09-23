@@ -291,3 +291,51 @@ td:first-child{min-width:170px}
 .effect-preview{padding:14px;margin:4px 0 12px;background:#f1f8f4;border-radius:10px;font-size:14px}.effect-preview>strong{font-size:14px;color:#17653e}.effect-preview ul{list-style:none;padding:0;margin:10px 0;display:grid;gap:12px}.effect-preview li{display:grid;gap:4px;line-height:1.45}.effect-preview li b{color:#17653e;font-size:16px}.effect-preview li small{display:block;color:#65766d}.effect-preview p{font-size:12px;line-height:1.5;color:#65766d;margin:0}.effect-critical{display:inline-block;font-size:11px;border-radius:4px;background:#f7edcf;color:#796027;padding:2px 5px}.session-preview{font-size:14px;line-height:1.5;color:#476252;margin:0 0 12px}.rec-button:disabled{cursor:default;opacity:.65;transform:none}.imported-profiles>p{font-size:14px;color:#52665b;margin:12px 0 8px}.imported-profiles>div{display:flex;flex-wrap:wrap;gap:8px}.imported-profiles button{max-width:100%;overflow-wrap:anywhere;height:auto;min-height:36px;text-align:left}
 
 .history-panel,.hr-extra-panel{margin-top:20px;padding:22px}.history-panel td:first-child,.participation-table td:first-child{white-space:normal;min-width:220px;max-width:380px}.history-panel td small,.participation-table td small{display:block;margin-top:5px;color:#66786c;font-size:12px}.section-explanation{font-size:13px;color:#66786c;line-height:1.5;margin:14px 0}.without-step-row{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1.5fr) auto;gap:16px;align-items:center;border-top:1px solid var(--line);padding:16px 0}.without-step-row strong{font-size:15px}.without-step-row span{display:block;font-size:13px;color:#66786c;margin-top:5px}.without-step-row ul{font-size:13px;line-height:1.6;margin:0;padding-left:20px}.mandatory-label{color:#87632b}.voluntary-label{color:#17653e}.hr-extra-panel .section-header p{line-height:1.6;margin-top:8px;max-width:900px}@media(max-width:700px){.without-step-row{grid-template-columns:1fr;gap:10px}.without-step-row button{justify-self:start}.history-panel,.hr-extra-panel{padding:16px}}
+
+.participation-scroll{max-height:560px;overflow:auto;scrollbar-gutter:stable}.participation-scroll th{position:sticky;top:0;background:var(--paper);z-index:1}.participation-scroll:focus-visible{outline:2px solid #16834b;outline-offset:3px}
+
+/* Keep the snapshot visible at intermediate desktop widths too. */
+.topbar{flex-wrap:wrap}
+.top-actions{flex-wrap:wrap}
+.top-actions .snapshot{display:block}
+/* Compact explanations retain every factor behind an accessible disclosure. */
+.reason-preview{padding:14px;background:#f1f8f4;border-radius:10px;color:#17653e;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.reason-preview strong{display:block;margin-bottom:5px}
+.recommendation-details{margin-bottom:18px;font-size:14px;line-height:1.6}
+.recommendation-details summary{cursor:pointer;color:#17653e;font-weight:700;padding:10px 0}
+.recommendation-details summary:focus-visible{outline:2px solid #16834b;outline-offset:3px}
+.recommendation-details .reason-list{margin-top:12px}
+.hr-scope{font-size:14px;color:#52665b;margin:0 0 12px}
+@media(max-width:900px){
+ .sidebar{position:static;width:100%;height:auto;padding:12px 16px;flex-direction:row;align-items:center;gap:14px;border-right:0;border-bottom:1px solid var(--line)}
+ .sidebar .brand{margin:0;height:auto}.sidebar .brand>span:last-child{display:none}
+ .sidebar .workspace-label,.sidebar .sidebar-bottom{display:none}
+ .sidebar .navigation{display:flex;flex-wrap:wrap;gap:8px;flex:1}
+ .sidebar .nav-item{width:auto;padding:10px;gap:6px;font-size:13px}
+ .sidebar .nav-item span:last-child{display:inline}
+ .main-content{margin-left:0}
+ .topbar{height:auto;min-height:90px;flex-wrap:wrap;gap:12px;padding-block:14px}
+ .top-actions{display:flex;flex-wrap:wrap;gap:10px;width:100%}
+ .top-actions .snapshot{display:block;flex:1;min-width:155px;font-size:12px}
+ .top-actions .role-switch span{display:inline}
+ .top-actions .role-switch{width:auto;flex-shrink:0;height:auto;min-height:36px;padding-inline:10px;font-size:12px}
+ .top-actions .language-switch select{min-height:36px;font-size:12px}
+}
+
+/* Quest XP is visually and functionally separate from career progress. */
+.rewards-panel{padding:26px;margin-top:24px}
+.quest-demo,.quest-badge{color:#17653e;background:#e8f5ed;border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px}
+.quest-disclaimer{padding:12px 16px;background:#fff8e8;border:1px solid #ead6a6;border-radius:10px;color:#70592b;font-size:14px;line-height:1.6}
+.quest-wallet{display:flex;flex-wrap:wrap;gap:24px;padding:22px 0;align-items:center}
+.quest-wallet>div{display:grid;gap:8px;min-width:120px}.quest-wallet span{color:#65766d;font-size:14px}.quest-wallet strong{font-size:38px;color:#17653e}.quest-wallet strong small{font-size:18px}.quest-wallet b{font-size:19px}
+.quest-goal{display:grid;gap:12px;background:#f1f8f4;padding:18px;border-radius:14px;margin-bottom:18px;font-size:14px}.quest-goal progress{width:100%;height:12px;accent-color:#008644}.quest-goal a{color:#17653e;font-weight:700}
+.quest-rules{font-size:14px;line-height:1.7;margin:18px 0}.quest-rules summary{cursor:pointer;color:#17653e;font-weight:700}.quest-rules p{margin-top:12px}
+.quest-catalog{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.quest-reward{border:1px solid #deebe2;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.quest-icon{font-size:27px;color:#008644}.quest-reward h3{font-size:18px;margin:0}.quest-reward p{font-size:14px;color:#65766d;line-height:1.6;margin:0;flex:1}.quest-reward>strong{font-size:20px;color:#17653e}.quest-reward small{color:#65766d}
+.quest-actions{display:flex;flex-wrap:wrap;gap:8px}.quest-actions button{height:auto;min-height:40px;white-space:normal}.quest-actions button:disabled{opacity:.55;cursor:default}
+.quest-confirm{padding:20px;background:#f1f8f4;border:2px solid #16834b;border-radius:14px;margin-top:20px;font-size:14px;line-height:1.6}.quest-confirm p{margin:10px 0}
+.quest-message{font-size:14px;line-height:1.6;color:#17653e;margin-top:16px}
+.quest-codes{display:grid;gap:12px}.quest-codes article{border:1px dashed #9cbea7;border-radius:12px;padding:16px;display:grid;gap:8px;font-size:14px}.quest-codes article span{font-size:12px;color:#87632b;font-weight:700}.quest-codes code{overflow-wrap:anywhere;user-select:all}.quest-codes small{color:#65766d}
+@media(max-width:1200px){.quest-catalog{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.quest-catalog{grid-template-columns:1fr}.rewards-panel{padding:16px}.quest-wallet{gap:16px}.quest-wallet>div{min-width:90px}}
